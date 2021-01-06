@@ -148,81 +148,6 @@
   
   
   <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
-    <link itemprop="mainEntityOfPage" href="http://zhollow.github.io/oldblog/2018/12/18/Redis-String%E7%B1%BB%E5%9E%8B/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/oldblog/images/avatar.gif">
-      <meta itemprop="name" content="Charles">
-      <meta itemprop="description" content="Be happy, please.">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="Charles' Blog">
-    </span>
-      <header class="post-header">
-        <h2 class="post-title" itemprop="name headline">
-          
-            <a href="/oldblog/2018/12/18/Redis-String%E7%B1%BB%E5%9E%8B/" class="post-title-link" itemprop="url">Redis-String类型</a>
-        </h2>
-
-        <div class="post-meta">
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-calendar"></i>
-              </span>
-              <span class="post-meta-item-text">发表于</span>
-
-              <time title="创建时间：2018-12-18 00:02:59" itemprop="dateCreated datePublished" datetime="2018-12-18T00:02:59+08:00">2018-12-18</time>
-            </span>
-              <span class="post-meta-item">
-                <span class="post-meta-item-icon">
-                  <i class="far fa-calendar-check"></i>
-                </span>
-                <span class="post-meta-item-text">更新于</span>
-                <time title="修改时间：2018-12-19 09:22:32" itemprop="dateModified" datetime="2018-12-19T09:22:32+08:00">2018-12-19</time>
-              </span>
-
-          
-
-        </div>
-      </header>
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-
-      
-          <h2 id="encoding"><a href="#encoding" class="headerlink" title="encoding"></a>encoding</h2><p>String类型在redis中有三种编码方式：<code>raw, int, embstr</code>。</p>
-<h3 id="raw"><a href="#raw" class="headerlink" title="raw"></a>raw</h3><p>编码方式为raw时，robj中的ptr指向一个sds结构中字符串的起始位置。</p>
-<p>sds结构分为两个部分，头部由len，alloc，flags组成，尾部是buf，存储字符串数据的地方。</p>
-<p>比如存储一个“value”，会是下面的结构：</p>
-          <!--noindex-->
-            <div class="post-button">
-              <a class="btn" href="/oldblog/2018/12/18/Redis-String%E7%B1%BB%E5%9E%8B/#more" rel="contents">
-                阅读全文 &raquo;
-              </a>
-            </div>
-          <!--/noindex-->
-        
-      
-    </div>
-
-    
-    
-    
-      <footer class="post-footer">
-        <div class="post-eof"></div>
-      </footer>
-  </article>
-  
-  
-  
-
-      
-  
-  
-  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
     <link itemprop="mainEntityOfPage" href="http://zhollow.github.io/oldblog/2018/12/18/Redis-%E6%BA%90%E7%A0%81%E9%98%85%E8%AF%BB%E5%9F%BA%E7%A1%80/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
@@ -893,6 +818,73 @@ private final char value[];</code></pre>
   
   
 
+      
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="http://zhollow.github.io/oldblog/2018/03/30/Linux-%E5%90%84%E7%A7%8Duid/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/oldblog/images/avatar.gif">
+      <meta itemprop="name" content="Charles">
+      <meta itemprop="description" content="Be happy, please.">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Charles' Blog">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          
+            <a href="/oldblog/2018/03/30/Linux-%E5%90%84%E7%A7%8Duid/" class="post-title-link" itemprop="url">Linux-各种uid</a>
+        </h2>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+              
+
+              <time title="创建时间：2018-03-30 19:46:39 / 修改时间：19:51:47" itemprop="dateCreated datePublished" datetime="2018-03-30T19:46:39+08:00">2018-03-30</time>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+          <h2 id="一、UID"><a href="#一、UID" class="headerlink" title="一、UID"></a>一、UID</h2><p>UID是系统中用来表示用户的标识符，启动的进程的uid就是当前登录用户的uid，查看用户uid可使用<code>id -u &lt;username&gt;</code>命令</p>
+<p>需要注意的是，权限检查的时候是对euid检查，通常情况下进程的euid是和uid相同的。</p>
+          <!--noindex-->
+            <div class="post-button">
+              <a class="btn" href="/oldblog/2018/03/30/Linux-%E5%90%84%E7%A7%8Duid/#more" rel="contents">
+                阅读全文 &raquo;
+              </a>
+            </div>
+          <!--/noindex-->
+        
+      
+    </div>
+
+    
+    
+    
+      <footer class="post-footer">
+        <div class="post-eof"></div>
+      </footer>
+  </article>
+  
+  
+  
+
 
   
   <nav class="pagination">
@@ -962,7 +954,7 @@ private final char value[];</code></pre>
       <div class="site-state-item site-state-posts">
           <a href="/oldblog/archives/">
         
-          <span class="site-state-item-count">22</span>
+          <span class="site-state-item-count">21</span>
           <span class="site-state-item-name">日志</span>
         </a>
       </div>
