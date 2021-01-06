@@ -1,0 +1,436 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 5.3.0">
+  <link rel="apple-touch-icon" sizes="180x180" href="/oldblog/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/oldblog/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/oldblog/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/oldblog/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/oldblog/css/main.css">
+
+
+<link rel="stylesheet" href="/oldblog/lib/font-awesome/css/all.min.css">
+
+<script id="hexo-configurations">
+    var NexT = window.NexT || {};
+    var CONFIG = {"hostname":"zhollow.github.io","root":"/oldblog/","scheme":"Pisces","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":false,"show_result":false,"style":null},"back2top":{"enable":true,"sidebar":false,"scrollpercent":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":false,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}}};
+  </script>
+
+  <meta name="description" content="想要搭建一个简单的http服务器，以熟悉python的http模块，但是找了一圈好像都是抄来抄去的，然后就翻手册、看源码开始自己写了。 最终实现的效果：一个很简易的RESTful的http服务器。 文档链接，server.py，serversocket.py 1 ,2 都是分析的过程，看代码可以直接跳转到代码编写. 设计由于是想要设计成RESTful，所以自然地就想到了这样的结构： 服务器收到一个">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Python-简易http服务器">
+<meta property="og:url" content="http://zhollow.github.io/oldblog/2018/11/23/Python-%E7%AE%80%E6%98%93http%E6%9C%8D%E5%8A%A1%E5%99%A8/index.html">
+<meta property="og:site_name" content="Charles&#39; Blog">
+<meta property="og:description" content="想要搭建一个简单的http服务器，以熟悉python的http模块，但是找了一圈好像都是抄来抄去的，然后就翻手册、看源码开始自己写了。 最终实现的效果：一个很简易的RESTful的http服务器。 文档链接，server.py，serversocket.py 1 ,2 都是分析的过程，看代码可以直接跳转到代码编写. 设计由于是想要设计成RESTful，所以自然地就想到了这样的结构： 服务器收到一个">
+<meta property="og:locale" content="zh_CN">
+<meta property="article:published_time" content="2018-11-23T14:17:23.000Z">
+<meta property="article:modified_time" content="2018-11-26T04:50:51.000Z">
+<meta property="article:author" content="Charles">
+<meta property="article:tag" content="python">
+<meta name="twitter:card" content="summary">
+
+<link rel="canonical" href="http://zhollow.github.io/oldblog/2018/11/23/Python-%E7%AE%80%E6%98%93http%E6%9C%8D%E5%8A%A1%E5%99%A8/">
+
+
+<script id="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome : false,
+    isPost : true,
+    lang   : 'zh-CN'
+  };
+</script>
+
+  <title>Python-简易http服务器 | Charles' Blog</title>
+  
+
+
+
+
+
+
+  <noscript>
+  <style>
+  .use-motion .brand,
+  .use-motion .menu-item,
+  .sidebar-inner,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header { opacity: initial; }
+
+  .use-motion .site-title,
+  .use-motion .site-subtitle {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line-before i { left: initial; }
+  .use-motion .logo-line-after i { right: initial; }
+  </style>
+</noscript>
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="container use-motion">
+    <div class="headband"></div>
+
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="切换导航栏">
+      <span class="toggle-line toggle-line-first"></span>
+      <span class="toggle-line toggle-line-middle"></span>
+      <span class="toggle-line toggle-line-last"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/oldblog/" class="brand" rel="start">
+      <span class="logo-line-before"><i></i></span>
+      <h1 class="site-title">Charles' Blog</h1>
+      <span class="logo-line-after"><i></i></span>
+    </a>
+      <p class="site-subtitle" itemprop="description">For better me.</p>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+    </div>
+  </div>
+</div>
+
+
+
+
+<nav class="site-nav">
+  <ul id="menu" class="main-menu menu">
+        <li class="menu-item menu-item-home">
+
+    <a href="/oldblog/" rel="section"><i class="fa fa-home fa-fw"></i>首页</a>
+
+  </li>
+        <li class="menu-item menu-item-archives">
+
+    <a href="/oldblog/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>归档</a>
+
+  </li>
+  </ul>
+</nav>
+
+
+
+
+</div>
+    </header>
+
+    
+  <div class="back-to-top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+
+
+    <main class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          
+
+          <div class="content post posts-expand">
+            
+
+    
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="http://zhollow.github.io/oldblog/2018/11/23/Python-%E7%AE%80%E6%98%93http%E6%9C%8D%E5%8A%A1%E5%99%A8/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/oldblog/images/avatar.gif">
+      <meta itemprop="name" content="Charles">
+      <meta itemprop="description" content="Be happy, please.">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Charles' Blog">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          Python-简易http服务器
+        </h1>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+
+              <time title="创建时间：2018-11-23 22:17:23" itemprop="dateCreated datePublished" datetime="2018-11-23T22:17:23+08:00">2018-11-23</time>
+            </span>
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="far fa-calendar-check"></i>
+                </span>
+                <span class="post-meta-item-text">更新于</span>
+                <time title="修改时间：2018-11-26 12:50:51" itemprop="dateModified" datetime="2018-11-26T12:50:51+08:00">2018-11-26</time>
+              </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+        <p>想要搭建一个简单的http服务器，以熟悉python的http模块，但是找了一圈好像都是抄来抄去的，然后就翻手册、看源码开始自己写了。</p>
+<p>最终实现的效果：一个很简易的RESTful的http服务器。</p>
+<p>文档链接，<a target="_blank" rel="noopener" href="https://github.com/python/cpython/blob/3.7/Lib/http/server.py">server.py</a>，<a target="_blank" rel="noopener" href="https://github.com/python/cpython/blob/3.7/Lib/socketserver.py">serversocket.py</a></p>
+<p><a href="#%E8%AE%BE%E8%AE%A1">1</a> ,<a href="#%E7%B1%BB%E7%BB%93%E6%9E%84%E5%8D%B3%E8%B0%83%E7%94%A8%E9%A1%BA%E5%BA%8F">2</a> 都是分析的过程，看代码可以直接跳转到<a href="#%E4%BB%A3%E7%A0%81%E7%BC%96%E5%86%99">代码编写</a>.</p>
+<h3 id="设计"><a href="#设计" class="headerlink" title="设计"></a>设计</h3><p>由于是想要设计成RESTful，所以自然地就想到了这样的结构：</p>
+<p>服务器收到一个请求，根据这个请求的路径，分发器Dispatcher分发到对应的Handler。在Handler中根据请求的方法（GET/POST/DELETE等）执行相应的逻辑。</p>
+<a id="more"></a>
+
+<h3 id="类结构及调用顺序"><a href="#类结构及调用顺序" class="headerlink" title="类结构及调用顺序"></a>类结构及调用顺序</h3><p>看了文档之后还是没法动手，那么就从文档中给出的下面这一小段代码入手吧</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">def</span> <span class="title">run</span>(<span class="params">server_class=HTTPServer, handler_class=BaseHTTPRequestHandler</span>):</span></span><br><span class="line">    server_address = (<span class="string">&#x27;&#x27;</span>, <span class="number">8000</span>)</span><br><span class="line">    httpd = server_class(server_address, handler_class)</span><br><span class="line">    httpd.serve_forever()</span><br></pre></td></tr></table></figure>
+<h4 id="Server中的流程"><a href="#Server中的流程" class="headerlink" title="Server中的流程"></a>Server中的流程</h4><p>先看HTTPServer：</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line"><span class="class"><span class="keyword">class</span> <span class="title">HTTPServer</span>(<span class="params">socketserver.TCPServer</span>):</span></span><br><span class="line"></span><br><span class="line">    allow_reuse_address = <span class="number">1</span>    <span class="comment"># Seems to make sense in testing environment</span></span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">def</span> <span class="title">server_bind</span>(<span class="params">self</span>):</span></span><br><span class="line">        <span class="string">&quot;&quot;&quot;Override server_bind to store the server name.&quot;&quot;&quot;</span></span><br><span class="line">        socketserver.TCPServer.server_bind(self)</span><br><span class="line">        host, port = self.server_address[:<span class="number">2</span>]</span><br><span class="line">        self.server_name = socket.getfqdn(host)</span><br><span class="line">        self.server_port = port</span><br></pre></td></tr></table></figure>
+<p>好像并没有多少信息，往上找，看看TCPServer</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br></pre></td><td class="code"><pre><span class="line">   <span class="function"><span class="keyword">def</span> <span class="title">__init__</span>(<span class="params">self, server_address, RequestHandlerClass, bind_and_activate=<span class="literal">True</span></span>):</span></span><br><span class="line">       <span class="string">&quot;&quot;&quot;Constructor.  May be extended, do not override.&quot;&quot;&quot;</span></span><br><span class="line">       BaseServer.__init__(self, server_address, RequestHandlerClass)</span><br><span class="line">       self.socket = socket.socket(self.address_family,</span><br><span class="line">                                   self.socket_type)</span><br><span class="line">       <span class="keyword">if</span> bind_and_activate:</span><br><span class="line">           <span class="keyword">try</span>:</span><br><span class="line">               self.server_bind()</span><br><span class="line">               self.server_activate()</span><br><span class="line">           <span class="keyword">except</span>:</span><br><span class="line">               self.server_close()</span><br><span class="line">               <span class="keyword">raise</span></span><br><span class="line">   <span class="comment">#...略去一些无关代码</span></span><br><span class="line"><span class="function"><span class="keyword">def</span> <span class="title">get_request</span>(<span class="params">self</span>):</span></span><br><span class="line">       <span class="string">&quot;&quot;&quot;Get the request and client address from the socket.</span></span><br><span class="line"><span class="string">       May be overridden.</span></span><br><span class="line"><span class="string">       &quot;&quot;&quot;</span></span><br><span class="line">       <span class="keyword">return</span> self.socket.accept()</span><br></pre></td></tr></table></figure>
+<p>嗯～到这还是看不出流程再往上，看BaseServer，这个代码就多了，不过很容易可以看到文档代码中的<code>start_forever</code>就是在这个类中，来看下代码：</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">def</span> <span class="title">serve_forever</span>(<span class="params">self, poll_interval=<span class="number">0.5</span></span>):</span></span><br><span class="line">    <span class="string">&quot;&quot;&quot;Handle one request at a time until shutdown.</span></span><br><span class="line"><span class="string">    Polls for shutdown every poll_interval seconds. Ignores</span></span><br><span class="line"><span class="string">    self.timeout. If you need to do periodic tasks, do them in</span></span><br><span class="line"><span class="string">    another thread.</span></span><br><span class="line"><span class="string">    &quot;&quot;&quot;</span></span><br><span class="line">    self.__is_shut_down.clear()</span><br><span class="line">    <span class="keyword">try</span>:</span><br><span class="line">        <span class="comment"># <span class="doctag">XXX:</span> Consider using another file descriptor or connecting to the</span></span><br><span class="line">        <span class="comment"># socket to wake this up instead of polling. Polling reduces our</span></span><br><span class="line">        <span class="comment"># responsiveness to a shutdown request and wastes cpu at all other</span></span><br><span class="line">        <span class="comment"># times.</span></span><br><span class="line">        <span class="keyword">with</span> _ServerSelector() <span class="keyword">as</span> selector:</span><br><span class="line">            selector.register(self, selectors.EVENT_READ)</span><br><span class="line"></span><br><span class="line">            <span class="keyword">while</span> <span class="keyword">not</span> self.__shutdown_request:</span><br><span class="line">                ready = selector.select(poll_interval)	<span class="comment">####这里</span></span><br><span class="line">                <span class="comment"># bpo-35017: shutdown() called during select(), exit immediately.</span></span><br><span class="line">                <span class="keyword">if</span> self.__shutdown_request:</span><br><span class="line">                    <span class="keyword">break</span></span><br><span class="line">                <span class="keyword">if</span> ready:</span><br><span class="line">                    self._handle_request_noblock()</span><br><span class="line"></span><br><span class="line">                self.service_actions()</span><br><span class="line">    <span class="keyword">finally</span>:</span><br><span class="line">        self.__shutdown_request = <span class="literal">False</span></span><br><span class="line">        self.__is_shut_down.<span class="built_in">set</span>()</span><br></pre></td></tr></table></figure>
+<p>可能上面有些类型和函数还不是很熟，但是种种迹象表明这是在等待用户请求啊，分析到这不用往上了。</p>
+<p>当用户请求到来的时候BaseServer会调用<code>_handle_request_noblock()</code>：</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">def</span> <span class="title">_handle_request_noblock</span>(<span class="params">self</span>):</span></span><br><span class="line">    <span class="string">&quot;&quot;&quot;Handle one request, without blocking.</span></span><br><span class="line"><span class="string">    I assume that selector.select() has returned that the socket is</span></span><br><span class="line"><span class="string">    readable before this function was called, so there should be no risk of</span></span><br><span class="line"><span class="string">    blocking in get_request().</span></span><br><span class="line"><span class="string">    &quot;&quot;&quot;</span></span><br><span class="line">    <span class="keyword">try</span>:</span><br><span class="line">        request, client_address = self.get_request()</span><br><span class="line">    <span class="keyword">except</span> OSError:</span><br><span class="line">        <span class="keyword">return</span></span><br><span class="line">    <span class="keyword">if</span> self.verify_request(request, client_address):</span><br><span class="line">        <span class="keyword">try</span>:</span><br><span class="line">            self.process_request(request, client_address)</span><br><span class="line">        <span class="keyword">except</span> Exception:</span><br><span class="line">            self.handle_error(request, client_address)</span><br><span class="line">            self.shutdown_request(request)</span><br><span class="line">        <span class="keyword">except</span>:</span><br><span class="line">            self.shutdown_request(request)</span><br><span class="line">            <span class="keyword">raise</span></span><br><span class="line">    <span class="keyword">else</span>:</span><br><span class="line">        self.shutdown_request(request)</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+<p>显然在这个方法中我们需要关注的是<code>process_request</code>，继续往下看</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">def</span> <span class="title">process_request</span>(<span class="params">self, request, client_address</span>):</span></span><br><span class="line">    <span class="string">&quot;&quot;&quot;Call finish_request.</span></span><br><span class="line"><span class="string">    Overridden by ForkingMixIn and ThreadingMixIn.</span></span><br><span class="line"><span class="string">    &quot;&quot;&quot;</span></span><br><span class="line">    self.finish_request(request, client_address)</span><br><span class="line">    self.shutdown_request(request)</span><br><span class="line"><span class="function"><span class="keyword">def</span> <span class="title">finish_request</span>(<span class="params">self, request, client_address</span>):</span></span><br><span class="line">    <span class="string">&quot;&quot;&quot;Finish one request by instantiating RequestHandlerClass.&quot;&quot;&quot;</span></span><br><span class="line">    self.RequestHandlerClass(request, client_address, self)</span><br><span class="line"><span class="function"><span class="keyword">def</span> <span class="title">__init__</span>(<span class="params">self, server_address, RequestHandlerClass</span>):</span></span><br><span class="line">    <span class="string">&quot;&quot;&quot;Constructor.  May be extended, do not override.&quot;&quot;&quot;</span></span><br><span class="line">    self.server_address = server_address</span><br><span class="line">    self.RequestHandlerClass = RequestHandlerClass</span><br><span class="line">    self.__is_shut_down = threading.Event()</span><br><span class="line">    self.__shutdown_request = <span class="literal">False</span></span><br></pre></td></tr></table></figure>
+<p>可以看到<code>process_request</code>中调用了<code>finish_request</code>，而在<code>finish_request</code>中创建了一个handler实例，创建实例用到的类型是在<code>__init__</code>中传进来的。</p>
+<p>注意到这里<code>finish_request</code>中只是创建了一个对象，而并没有保存它，我们可以猜到这就相当于把工作都扔给这个Handler实例了，然后BaseServer就又回去等待请求了。</p>
+<p>综上，Server中的调用流程是这样的：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">BaseServer.start_forever()	循环等待请求</span><br><span class="line">	_handle_request_noblock()</span><br><span class="line">		process_request()</span><br><span class="line">			finish_request()</span><br><span class="line">				RequestHandlerClass()	创建Handler实例，把请求交给它处理</span><br></pre></td></tr></table></figure>
+<h4 id="Handler中的流程"><a href="#Handler中的流程" class="headerlink" title="Handler中的流程"></a>Handler中的流程</h4><p>还是从示例代码入手，看BaseHTTPRequestHandler。一看发现没有<code>__init__</code>啊，往上，看StreamRequestHandler，也没有<code>__init__</code>。到最上面的<code>BaseRequestHandler</code>，有如下代码</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br></pre></td><td class="code"><pre><span class="line"><span class="class"><span class="keyword">class</span> <span class="title">BaseRequestHandler</span>:</span></span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">def</span> <span class="title">__init__</span>(<span class="params">self, request, client_address, server</span>):</span></span><br><span class="line">        self.request = request</span><br><span class="line">        self.client_address = client_address</span><br><span class="line">        self.server = server</span><br><span class="line">        self.setup()</span><br><span class="line">        <span class="keyword">try</span>:</span><br><span class="line">            self.handle()</span><br><span class="line">        <span class="keyword">finally</span>:</span><br><span class="line">            self.finish()</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">def</span> <span class="title">setup</span>(<span class="params">self</span>):</span></span><br><span class="line">        <span class="keyword">pass</span></span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">def</span> <span class="title">handle</span>(<span class="params">self</span>):</span></span><br><span class="line">        <span class="keyword">pass</span></span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">def</span> <span class="title">finish</span>(<span class="params">self</span>):</span></span><br><span class="line">        <span class="keyword">pass</span></span><br></pre></td></tr></table></figure>
+<p>嗯，原来创建Handler之后就调用了Handler中的handle()方法，现在来看下<code>BaseHTTPRequestHandler</code>中重写的handle方法：</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">def</span> <span class="title">handle</span>(<span class="params">self</span>):</span></span><br><span class="line">    <span class="string">&quot;&quot;&quot;Handle multiple requests if necessary.&quot;&quot;&quot;</span></span><br><span class="line">    self.close_connection = <span class="literal">True</span></span><br><span class="line"></span><br><span class="line">    self.handle_one_request()</span><br><span class="line">    <span class="keyword">while</span> <span class="keyword">not</span> self.close_connection:</span><br><span class="line">        self.handle_one_request()</span><br><span class="line"><span class="function"><span class="keyword">def</span> <span class="title">handle_one_request</span>(<span class="params">self</span>):</span></span><br><span class="line">    <span class="keyword">try</span>:</span><br><span class="line">        self.raw_requestline = self.rfile.readline(<span class="number">65537</span>)</span><br><span class="line">        <span class="keyword">if</span> <span class="built_in">len</span>(self.raw_requestline) &gt; <span class="number">65536</span>:</span><br><span class="line">            self.requestline = <span class="string">&#x27;&#x27;</span></span><br><span class="line">            self.request_version = <span class="string">&#x27;&#x27;</span></span><br><span class="line">            self.command = <span class="string">&#x27;&#x27;</span></span><br><span class="line">            self.send_error(HTTPStatus.REQUEST_URI_TOO_LONG)</span><br><span class="line">            <span class="keyword">return</span></span><br><span class="line">        <span class="keyword">if</span> <span class="keyword">not</span> self.raw_requestline:</span><br><span class="line">            self.close_connection = <span class="literal">True</span></span><br><span class="line">            <span class="keyword">return</span></span><br><span class="line">        <span class="keyword">if</span> <span class="keyword">not</span> self.parse_request():</span><br><span class="line">            <span class="comment"># An error code has been sent, just exit</span></span><br><span class="line">            <span class="keyword">return</span></span><br><span class="line">        mname = <span class="string">&#x27;do_&#x27;</span> + self.command		</span><br><span class="line">        <span class="keyword">if</span> <span class="keyword">not</span> <span class="built_in">hasattr</span>(self, mname):</span><br><span class="line">            self.send_error(</span><br><span class="line">                HTTPStatus.NOT_IMPLEMENTED,</span><br><span class="line">                <span class="string">&quot;Unsupported method (%r)&quot;</span> % self.command)</span><br><span class="line">            <span class="keyword">return</span></span><br><span class="line">        method = <span class="built_in">getattr</span>(self, mname)</span><br><span class="line">        method()			<span class="comment">#### 这里，马上就调用http方法对应的成员方法</span></span><br><span class="line">        self.wfile.flush() <span class="comment">#actually send the response if not already done.</span></span><br><span class="line">    <span class="keyword">except</span> socket.timeout <span class="keyword">as</span> e:</span><br><span class="line">        <span class="comment">#a read or a write timed out.  Discard this connection</span></span><br><span class="line">        self.log_error(<span class="string">&quot;Request timed out: %r&quot;</span>, e)</span><br><span class="line">        self.close_connection = <span class="literal">True</span></span><br><span class="line">        <span class="keyword">return</span></span><br></pre></td></tr></table></figure>
+<p>分析到这里，BaseHTTPRequestHandler中的调用关系也清楚了：</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">BaseHTTPRequestHandler.__init__()</span><br><span class="line">	handle()</span><br><span class="line">    	handle_one_request()</span><br><span class="line">        	do_SPAM()	调用与http方法对应的成员方法</span><br></pre></td></tr></table></figure>
+<p>既然一个请求的处理流程现在已经清楚了，那么现在回到我们的最初的设计，Dispatcher放到哪里？</p>
+<p>Dispatcher需要做的是解析请求的头部（获取路径嘛），然后分发给对应的Handler，这里有两种做法，继承Server/继承Handler。我选择后一种，继承BaseHTTPRequestHandler，为什么，因为里面有个parse_request可以用来解析请求头部。</p>
+<h3 id="代码编写"><a href="#代码编写" class="headerlink" title="代码编写"></a>代码编写</h3><p>分为两个模块来写，handlers.py以及server.py</p>
+<p><strong>server.py</strong></p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">from</span> http.server <span class="keyword">import</span> HTTPServer, BaseHTTPRequestHandler</span><br><span class="line"><span class="keyword">from</span> handlers <span class="keyword">import</span> *</span><br><span class="line"><span class="keyword">import</span> json</span><br><span class="line"><span class="keyword">import</span> sys</span><br><span class="line"><span class="keyword">import</span> socket</span><br><span class="line"><span class="keyword">import</span> re</span><br><span class="line"><span class="keyword">from</span> urllib.parse <span class="keyword">import</span> urlparse</span><br><span class="line"></span><br><span class="line">urlpatterns = [</span><br><span class="line">    (<span class="string">&#x27;/article/(?P&lt;id&gt;\\d+)/?$&#x27;</span>, ArticleDetailHandler),</span><br><span class="line">    (<span class="string">&#x27;/article/?$&#x27;</span>, ArticleHandler),</span><br><span class="line">    (<span class="string">&#x27;/article/creation/?$&#x27;</span>, NewArticleHandler),</span><br><span class="line">]</span><br><span class="line"></span><br><span class="line"></span><br><span class="line"><span class="class"><span class="keyword">class</span> <span class="title">Dispatcher</span>(<span class="params">BaseHTTPRequestHandler</span>):</span></span><br><span class="line">    <span class="string">&quot;&quot;&quot;</span></span><br><span class="line"><span class="string">    根据url的不同分发请求</span></span><br><span class="line"><span class="string">    &quot;&quot;&quot;</span></span><br><span class="line">    <span class="function"><span class="keyword">def</span> <span class="title">handle_one_request</span>(<span class="params">self</span>):</span></span><br><span class="line">        <span class="keyword">try</span>:</span><br><span class="line">            self.raw_requestline = self.rfile.readline(<span class="number">65537</span>)</span><br><span class="line">            <span class="keyword">if</span> <span class="built_in">len</span>(self.raw_requestline) &gt; <span class="number">65536</span>:</span><br><span class="line">                self.requestline = <span class="string">&#x27;&#x27;</span></span><br><span class="line">                self.request_version = <span class="string">&#x27;&#x27;</span></span><br><span class="line">                self.command = <span class="string">&#x27;&#x27;</span></span><br><span class="line">                self.send_error(HTTPStatus.REQUEST_URI_TOO_LONG)</span><br><span class="line">                <span class="keyword">return</span></span><br><span class="line">            <span class="keyword">if</span> <span class="keyword">not</span> self.raw_requestline:</span><br><span class="line">                self.close_connection = <span class="literal">True</span></span><br><span class="line">                <span class="keyword">return</span></span><br><span class="line">            <span class="keyword">if</span> <span class="keyword">not</span> self.parse_request():</span><br><span class="line">                <span class="comment"># An error code has been sent, just exit</span></span><br><span class="line">                <span class="keyword">return</span></span><br><span class="line">            path = urlparse(self.path).path</span><br><span class="line">            has_handled = <span class="literal">False</span></span><br><span class="line"></span><br><span class="line">            <span class="keyword">for</span> pattern, handler <span class="keyword">in</span> urlpatterns:</span><br><span class="line">                m = re.match(pattern, path)</span><br><span class="line">                <span class="keyword">if</span> m:</span><br><span class="line">                    has_handled = <span class="literal">True</span></span><br><span class="line">                    h = handler(self)</span><br><span class="line">                    h.handle(m.groupdict())</span><br><span class="line">                    self.wfile.flush()</span><br><span class="line">                    <span class="keyword">return</span></span><br><span class="line">            <span class="comment"># no matching pattern</span></span><br><span class="line">            <span class="comment"># use the default handler</span></span><br><span class="line">            Handler(self).handle(<span class="literal">None</span>)</span><br><span class="line">            self.wfile.flush() <span class="comment">#actually send the response if not already done.</span></span><br><span class="line">        <span class="keyword">except</span> socket.timeout <span class="keyword">as</span> e:</span><br><span class="line">            <span class="comment">#a read or a write timed out.  Discard this connection</span></span><br><span class="line">            self.log_error(<span class="string">&quot;Request timed out: %r&quot;</span>, e)</span><br><span class="line">            self.close_connection = <span class="literal">True</span></span><br><span class="line">            <span class="keyword">return</span></span><br><span class="line"></span><br><span class="line"></span><br><span class="line"></span><br><span class="line"><span class="keyword">if</span> __name__ == <span class="string">&#x27;__main__&#x27;</span>:</span><br><span class="line">    <span class="keyword">if</span> <span class="built_in">len</span>(sys.argv) &lt; <span class="number">2</span>:</span><br><span class="line">        print(<span class="string">f&#x27;Usage: <span class="subst">&#123;sys.argv[<span class="number">0</span>]&#125;</span> &lt;port&gt;&#x27;</span>)</span><br><span class="line">        exit(<span class="number">0</span>)</span><br><span class="line">    port = <span class="built_in">int</span>(sys.argv[<span class="number">1</span>])</span><br><span class="line">    server = HTTPServer((<span class="string">&#x27;&#x27;</span>, port), Dispatcher)</span><br><span class="line">    print(<span class="string">f&#x27;listening on <span class="subst">&#123;port&#125;</span>&#x27;</span>)</span><br><span class="line">    server.serve_forever()</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+
+
+<p><strong>handlers.py</strong></p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br><span class="line">80</span><br><span class="line">81</span><br><span class="line">82</span><br><span class="line">83</span><br><span class="line">84</span><br><span class="line">85</span><br><span class="line">86</span><br><span class="line">87</span><br><span class="line">88</span><br><span class="line">89</span><br><span class="line">90</span><br><span class="line">91</span><br><span class="line">92</span><br><span class="line">93</span><br><span class="line">94</span><br><span class="line">95</span><br><span class="line">96</span><br><span class="line">97</span><br><span class="line">98</span><br><span class="line">99</span><br><span class="line">100</span><br><span class="line">101</span><br><span class="line">102</span><br><span class="line">103</span><br><span class="line">104</span><br><span class="line">105</span><br><span class="line">106</span><br><span class="line">107</span><br><span class="line">108</span><br><span class="line">109</span><br><span class="line">110</span><br><span class="line">111</span><br><span class="line">112</span><br><span class="line">113</span><br><span class="line">114</span><br><span class="line">115</span><br><span class="line">116</span><br><span class="line">117</span><br><span class="line">118</span><br><span class="line">119</span><br><span class="line">120</span><br><span class="line">121</span><br><span class="line">122</span><br><span class="line">123</span><br><span class="line">124</span><br><span class="line">125</span><br><span class="line">126</span><br><span class="line">127</span><br><span class="line">128</span><br><span class="line">129</span><br><span class="line">130</span><br><span class="line">131</span><br><span class="line">132</span><br><span class="line">133</span><br><span class="line">134</span><br><span class="line">135</span><br><span class="line">136</span><br><span class="line">137</span><br><span class="line">138</span><br><span class="line">139</span><br><span class="line">140</span><br><span class="line">141</span><br><span class="line">142</span><br><span class="line">143</span><br><span class="line">144</span><br><span class="line">145</span><br><span class="line">146</span><br><span class="line">147</span><br><span class="line">148</span><br><span class="line">149</span><br><span class="line">150</span><br><span class="line">151</span><br><span class="line">152</span><br><span class="line">153</span><br><span class="line">154</span><br><span class="line">155</span><br><span class="line">156</span><br><span class="line">157</span><br><span class="line">158</span><br><span class="line">159</span><br><span class="line">160</span><br><span class="line">161</span><br><span class="line">162</span><br><span class="line">163</span><br><span class="line">164</span><br><span class="line">165</span><br><span class="line">166</span><br><span class="line">167</span><br><span class="line">168</span><br><span class="line">169</span><br><span class="line">170</span><br><span class="line">171</span><br><span class="line">172</span><br><span class="line">173</span><br><span class="line">174</span><br><span class="line">175</span><br><span class="line">176</span><br><span class="line">177</span><br><span class="line">178</span><br><span class="line">179</span><br><span class="line">180</span><br><span class="line">181</span><br><span class="line">182</span><br><span class="line">183</span><br><span class="line">184</span><br><span class="line">185</span><br><span class="line">186</span><br><span class="line">187</span><br><span class="line">188</span><br><span class="line">189</span><br><span class="line">190</span><br><span class="line">191</span><br><span class="line">192</span><br><span class="line">193</span><br><span class="line">194</span><br><span class="line">195</span><br><span class="line">196</span><br><span class="line">197</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">import</span> json</span><br><span class="line"><span class="keyword">import</span> cgi</span><br><span class="line"><span class="keyword">import</span> re</span><br><span class="line"><span class="keyword">from</span> urllib.parse <span class="keyword">import</span> urlparse, parse_qs</span><br><span class="line"><span class="keyword">from</span> string <span class="keyword">import</span> Template</span><br><span class="line"></span><br><span class="line">err_page = <span class="string">&quot;&quot;&quot;</span></span><br><span class="line"><span class="string">&lt;html&gt;</span></span><br><span class="line"><span class="string">&lt;head&gt;</span></span><br><span class="line"><span class="string">&lt;meta charset=&#x27;utf8&#x27;&gt;</span></span><br><span class="line"><span class="string">&lt;/head&gt;</span></span><br><span class="line"><span class="string">&lt;body&gt;</span></span><br><span class="line"><span class="string">&lt;h2&gt;$error_code&lt;/h2&gt;</span></span><br><span class="line"><span class="string">&lt;p&gt;$error_message&lt;/p&gt;</span></span><br><span class="line"><span class="string">&lt;/body&gt;</span></span><br><span class="line"><span class="string">&lt;/html&gt;</span></span><br><span class="line"><span class="string">&quot;&quot;&quot;</span></span><br><span class="line"></span><br><span class="line">article_page = <span class="string">&quot;&quot;&quot;</span></span><br><span class="line"><span class="string">&lt;html&gt;</span></span><br><span class="line"><span class="string">&lt;head&gt;</span></span><br><span class="line"><span class="string">&lt;meta charset=&#x27;utf8&#x27;&gt;</span></span><br><span class="line"><span class="string">&lt;/head&gt;</span></span><br><span class="line"><span class="string">&lt;body&gt;</span></span><br><span class="line"><span class="string">&lt;h2&gt;$title&lt;/h2&gt;</span></span><br><span class="line"><span class="string">&lt;p&gt;$body&lt;/p&gt;</span></span><br><span class="line"><span class="string">&lt;/body&gt;</span></span><br><span class="line"><span class="string">&lt;/html&gt;</span></span><br><span class="line"><span class="string">&quot;&quot;&quot;</span></span><br><span class="line"></span><br><span class="line">article_list_page = <span class="string">&quot;&quot;&quot;</span></span><br><span class="line"><span class="string">&lt;html&gt;</span></span><br><span class="line"><span class="string">&lt;head&gt;</span></span><br><span class="line"><span class="string">&lt;meta charset=&#x27;utf8&#x27;&gt;</span></span><br><span class="line"><span class="string">&lt;/head&gt;</span></span><br><span class="line"><span class="string">&lt;body&gt;</span></span><br><span class="line"><span class="string">$article_list</span></span><br><span class="line"><span class="string"></span></span><br><span class="line"><span class="string">&lt;br&gt;</span></span><br><span class="line"><span class="string">&lt;a href=&#x27;$new_article_url&#x27;&gt;</span></span><br><span class="line"><span class="string">new article&lt;/a&gt;</span></span><br><span class="line"><span class="string">&lt;/body&gt;</span></span><br><span class="line"><span class="string">&lt;/html&gt;</span></span><br><span class="line"><span class="string">&quot;&quot;&quot;</span></span><br><span class="line"></span><br><span class="line">new_article_page = <span class="string">&quot;&quot;&quot;</span></span><br><span class="line"><span class="string">&lt;html&gt;</span></span><br><span class="line"><span class="string">&lt;head&gt;</span></span><br><span class="line"><span class="string">&lt;meta charset=&#x27;utf8&#x27;&gt;</span></span><br><span class="line"><span class="string">&lt;/head&gt;</span></span><br><span class="line"><span class="string">&lt;body&gt;</span></span><br><span class="line"><span class="string">&lt;form action=&#x27;$action&#x27; method=&#x27;POST&#x27;&gt;</span></span><br><span class="line"><span class="string">&lt;label for=&#x27;title&#x27;&gt;</span></span><br><span class="line"><span class="string">title</span></span><br><span class="line"><span class="string">&lt;/label&gt;</span></span><br><span class="line"><span class="string">&lt;input id=&#x27;title&#x27; name=&#x27;title&#x27;&gt;&lt;br&gt;</span></span><br><span class="line"><span class="string">&lt;label for=&#x27;body&#x27;&gt;body&lt;/label&gt;</span></span><br><span class="line"><span class="string">&lt;textarea cols=40 rows=30 id=&#x27;body&#x27; name=&#x27;body&#x27;&gt;&lt;/textarea&gt;</span></span><br><span class="line"><span class="string">&lt;br&gt;</span></span><br><span class="line"><span class="string">&lt;input type=&#x27;submit&#x27;&gt;</span></span><br><span class="line"><span class="string">&lt;/form&gt;</span></span><br><span class="line"><span class="string">&lt;/body&gt;</span></span><br><span class="line"><span class="string">&lt;/html&gt;</span></span><br><span class="line"><span class="string">&quot;&quot;&quot;</span></span><br><span class="line"></span><br><span class="line">article_list = [</span><br><span class="line">    &#123;</span><br><span class="line">        <span class="string">&#x27;title&#x27;</span>:<span class="string">&#x27;learning&#x27;</span>,</span><br><span class="line">        <span class="string">&#x27;body&#x27;</span>:<span class="string">&#x27;learning is for life.&#x27;</span></span><br><span class="line">    &#125;,</span><br><span class="line">    &#123;</span><br><span class="line">        <span class="string">&#x27;title&#x27;</span>:<span class="string">&#x27;coding&#x27;</span>,</span><br><span class="line">        <span class="string">&#x27;body&#x27;</span>:<span class="string">&#x27;try to make a living by coding and gain some money.&#x27;</span></span><br><span class="line">    &#125;,</span><br><span class="line">    &#123;</span><br><span class="line">        <span class="string">&#x27;title&#x27;</span>:<span class="string">&#x27;having fun&#x27;</span>,</span><br><span class="line">        <span class="string">&#x27;body&#x27;</span>:<span class="string">&quot;sometimes I don&#x27;t fill like doing anything. Have fun.&quot;</span></span><br><span class="line">    &#125;</span><br><span class="line">]</span><br><span class="line"></span><br><span class="line"><span class="class"><span class="keyword">class</span> <span class="title">Handler</span>:</span></span><br><span class="line">    <span class="string">&quot;&quot;&quot;</span></span><br><span class="line"><span class="string">    处理对应资源的请求</span></span><br><span class="line"><span class="string">    所有的handler都应当继承这个类，并且</span></span><br><span class="line"><span class="string">    1. 定义resource_name</span></span><br><span class="line"><span class="string">    2. 相应do_SPAM方法</span></span><br><span class="line"><span class="string">    &quot;&quot;&quot;</span></span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">def</span> <span class="title">do_NOSUCHMETHOD</span>(<span class="params">self</span>):</span></span><br><span class="line">        self.dispatcher.protocol_version = <span class="string">&#x27;HTTP/1.1&#x27;</span></span><br><span class="line">        self.dispatcher.send_response(<span class="number">404</span>, <span class="string">&#x27;NOT FOUND&#x27;</span>)</span><br><span class="line">        self.dispatcher.send_header(<span class="string">&#x27;Content-type&#x27;</span>, <span class="string">&#x27;text/plain&#x27;</span>)</span><br><span class="line">        self.dispatcher.end_headers()</span><br><span class="line">        self.dispatcher.wfile.write(<span class="built_in">bytes</span>(<span class="string">&#x27;oops, there is nothing here&#x27;</span>, <span class="string">&#x27;utf-8&#x27;</span>))</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">def</span> <span class="title">cannot_handle</span>(<span class="params">self, err_code, err_message</span>):</span></span><br><span class="line">        self.dispatcher.protocol_version = <span class="string">&#x27;HTTP/1.1&#x27;</span></span><br><span class="line">        self.dispatcher.send_response(<span class="number">500</span>)</span><br><span class="line">        self.dispatcher.send_header(<span class="string">&#x27;Content-type&#x27;</span>, <span class="string">&#x27;text/html&#x27;</span>)</span><br><span class="line">        self.dispatcher.end_headers()</span><br><span class="line">        t = Template(err_page)</span><br><span class="line">        self.dispatcher.wfile.write(</span><br><span class="line">                <span class="built_in">bytes</span>(</span><br><span class="line">                    t.substitute(</span><br><span class="line">                        error_code=err_code,error_message=err_message), <span class="string">&#x27;utf-8&#x27;</span>))</span><br><span class="line"> </span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">def</span> <span class="title">__init__</span>(<span class="params">self, dispatcher</span>):</span></span><br><span class="line">        self.dispatcher = dispatcher</span><br><span class="line">        self.dispatcher.protocol_version = <span class="string">&#x27;HTTP/1.1&#x27;</span></span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">def</span> <span class="title">handle</span>(<span class="params">self, context</span>):</span></span><br><span class="line">        <span class="string">&quot;&quot;&quot;</span></span><br><span class="line"><span class="string">        根据dispatcher解析出来的path，调用对应的方法</span></span><br><span class="line"><span class="string">        context是一个字典，包括此次操作需要的数据，比如要获取id为3的article</span></span><br><span class="line"><span class="string">        那么可能传入&#123;&#x27;id&#x27;:3&#125;，设置这个参数的原因是为了让路径和处理的handler解耦</span></span><br><span class="line"><span class="string">        不过说是解耦，其实并没有完全解耦因为一个页面中可能有跳转到其它页面的链接，如果需要达到解耦的目的</span></span><br><span class="line"><span class="string">        可以参考django的urlpattern，给每个pattern一个name</span></span><br><span class="line"><span class="string">        &quot;&quot;&quot;</span></span><br><span class="line">        self.context = context</span><br><span class="line">        command = <span class="string">&#x27;do_&#x27;</span> + self.dispatcher.command</span><br><span class="line">        <span class="keyword">if</span> <span class="keyword">not</span> <span class="built_in">hasattr</span>(self, command):</span><br><span class="line">            self.do_NOSUCHMETHOD()</span><br><span class="line">            <span class="keyword">return</span></span><br><span class="line"></span><br><span class="line">        method = <span class="built_in">getattr</span>(self, command)</span><br><span class="line">        method()</span><br><span class="line"></span><br><span class="line"><span class="class"><span class="keyword">class</span> <span class="title">ArticleDetailHandler</span>(<span class="params">Handler</span>):</span></span><br><span class="line">    <span class="function"><span class="keyword">def</span> <span class="title">do_GET</span>(<span class="params">self</span>):</span></span><br><span class="line">        <span class="keyword">if</span> <span class="string">&#x27;id&#x27;</span> <span class="keyword">not</span> <span class="keyword">in</span> self.context <span class="keyword">or</span> <span class="built_in">int</span>(self.context[<span class="string">&#x27;id&#x27;</span>]) &gt;= <span class="built_in">len</span>(article_list):</span><br><span class="line">            self.cannot_handle(<span class="number">404</span>, <span class="string">&#x27;not found&#x27;</span>)</span><br><span class="line">            <span class="keyword">return</span></span><br><span class="line">        <span class="built_in">id</span> = <span class="built_in">int</span>(self.context[<span class="string">&#x27;id&#x27;</span>])</span><br><span class="line">        self.dispatcher.protocol_version = <span class="string">&#x27;HTTP/1.1&#x27;</span></span><br><span class="line">        self.dispatcher.send_response(<span class="number">200</span>, <span class="string">&#x27;OK&#x27;</span>)</span><br><span class="line">        self.dispatcher.send_header(<span class="string">&#x27;Content-type&#x27;</span>, <span class="string">&#x27;text/html&#x27;</span>)</span><br><span class="line">        self.dispatcher.end_headers();</span><br><span class="line">        t = Template(article_page)</span><br><span class="line">        res = t.substitute(title=article_list[<span class="built_in">id</span>][<span class="string">&#x27;title&#x27;</span>], body=article_list[<span class="built_in">id</span>][<span class="string">&#x27;body&#x27;</span>])</span><br><span class="line">        self.dispatcher.wfile.write(<span class="built_in">bytes</span>(res, <span class="string">&#x27;utf-8&#x27;</span>))</span><br><span class="line"></span><br><span class="line"><span class="class"><span class="keyword">class</span> <span class="title">ArticleHandler</span>(<span class="params">Handler</span>):</span></span><br><span class="line">    <span class="function"><span class="keyword">def</span> <span class="title">do_GET</span>(<span class="params">self</span>):</span></span><br><span class="line">        <span class="string">&quot;&quot;&quot;</span></span><br><span class="line"><span class="string">        返回文章列表</span></span><br><span class="line"><span class="string">        &quot;&quot;&quot;</span></span><br><span class="line">        result_template = Template(article_list_page)</span><br><span class="line">        article_list_str = <span class="string">&#x27;&lt;ul&gt;&#x27;</span></span><br><span class="line">        <span class="keyword">for</span> i, article <span class="keyword">in</span> <span class="built_in">enumerate</span>(article_list):</span><br><span class="line">            article_list_str += <span class="string">&#x27;&lt;li&gt;&lt;a href=&quot;/article/&#123;id&#125;&quot;&gt;&#123;title&#125;&lt;/a&gt;&lt;/li&gt;&#x27;</span>.<span class="built_in">format</span>(<span class="built_in">id</span>=i,title=article[<span class="string">&#x27;title&#x27;</span>])</span><br><span class="line">        article_list_str += <span class="string">&#x27;&lt;/ul&gt;&#x27;</span></span><br><span class="line"></span><br><span class="line">        response = result_template.substitute(article_list=article_list_str, new_article_url=<span class="string">&#x27;/article/creation&#x27;</span>)</span><br><span class="line">        self.dispatcher.protocol_version = <span class="string">&#x27;HTTP/1.1&#x27;</span></span><br><span class="line">        self.dispatcher.send_response(<span class="number">200</span>, <span class="string">&#x27;OK&#x27;</span>)</span><br><span class="line">        self.dispatcher.send_header(<span class="string">&#x27;Content-type&#x27;</span>, <span class="string">&#x27;text/html&#x27;</span>)</span><br><span class="line">        self.dispatcher.end_headers()</span><br><span class="line">        self.dispatcher.wfile.write(<span class="built_in">bytes</span>(response, <span class="string">&#x27;utf-8&#x27;</span>))</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">def</span> <span class="title">do_POST</span>(<span class="params">self</span>):</span></span><br><span class="line"></span><br><span class="line">        <span class="comment"># 解析post参数</span></span><br><span class="line"></span><br><span class="line">        <span class="string">&quot;&quot;&quot;</span></span><br><span class="line"><span class="string">        todo 解析参数</span></span><br><span class="line"><span class="string">        parsed = urlparse(self.dispatcher.path)</span></span><br><span class="line"><span class="string">        qcs = dict(qc.split(&#x27;=&#x27;) for qc in parsed.query.split(&#x27;&amp;&#x27;))</span></span><br><span class="line"><span class="string">        path = parsed.path</span></span><br><span class="line"><span class="string">        &quot;&quot;&quot;</span></span><br><span class="line"></span><br><span class="line">        ctype, pdict = cgi.parse_header(self.dispatcher.headers[<span class="string">&#x27;content-type&#x27;</span>])</span><br><span class="line">        <span class="keyword">if</span> ctype == <span class="string">&#x27;multipart/form-data&#x27;</span>:</span><br><span class="line">            postvars = cgi.parse_multipart(self.dispatche.rfile, pdict)</span><br><span class="line">        <span class="keyword">elif</span> ctype == <span class="string">&#x27;application/x-www-form-urlencoded&#x27;</span>:</span><br><span class="line">            length = <span class="built_in">int</span>(self.dispatcher.headers[<span class="string">&#x27;content-length&#x27;</span>])</span><br><span class="line">            postvars = parse_qs(<span class="built_in">bytes</span>.decode(self.dispatcher.rfile.read(length)), keep_blank_values=<span class="number">1</span>, encoding=<span class="string">&#x27;utf-8&#x27;</span>)</span><br><span class="line">        <span class="keyword">else</span>:</span><br><span class="line">            self.cannot_handle(<span class="number">404</span>, <span class="string">&#x27;not supported&#x27;</span>)</span><br><span class="line">            <span class="keyword">return</span></span><br><span class="line">        <span class="keyword">try</span>:</span><br><span class="line">            article_list.append(&#123;</span><br><span class="line">                <span class="string">&#x27;title&#x27;</span>: postvars[<span class="string">&#x27;title&#x27;</span>][<span class="number">0</span>],</span><br><span class="line">                <span class="string">&#x27;body&#x27;</span> : postvars[<span class="string">&#x27;body&#x27;</span>][<span class="number">0</span>]</span><br><span class="line">            &#125;)</span><br><span class="line">        <span class="keyword">except</span> KeyError <span class="keyword">as</span> e:</span><br><span class="line">            self.cannot_handle(<span class="number">404</span>, <span class="string">&#x27;not supported&#x27;</span>)</span><br><span class="line">            <span class="keyword">return</span></span><br><span class="line">        self.do_GET()</span><br><span class="line"></span><br><span class="line"><span class="class"><span class="keyword">class</span> <span class="title">NewArticleHandler</span>(<span class="params">Handler</span>):</span></span><br><span class="line">    <span class="function"><span class="keyword">def</span> <span class="title">do_GET</span>(<span class="params">self</span>):</span></span><br><span class="line">        t = Template(new_article_page)</span><br><span class="line">        self.dispatcher.send_response(<span class="number">200</span>, <span class="string">&#x27;OK&#x27;</span>)</span><br><span class="line">        self.dispatcher.send_header(<span class="string">&#x27;Content-type&#x27;</span>, <span class="string">&#x27;text/html&#x27;</span>)</span><br><span class="line">        self.dispatcher.end_headers()</span><br><span class="line">        self.dispatcher.wfile.write(<span class="built_in">bytes</span>(t.substitute(action=<span class="string">&#x27;/article&#x27;</span>), <span class="string">&#x27;utf-8&#x27;</span>))</span><br></pre></td></tr></table></figure>
+<h3 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h3><p>其实上面写了很多分析的过程，记录下来主要是积累经验。侯捷不是说过：源码之前，了无秘密。看源码也是个人能力的一种体现，需要多多锻炼才是啊。</p>
+<p>虽然上面的代码很基础，但是还是有一些收获的。</p>
+<p>首先，必须要带着目的去看，不要为了看源码而看源码。比如说上面，我想弄出Dispatcher和Handler的这种设计出来，那么就顺着request去看。</p>
+<p>其次，有些问题看似简单，但是深挖下去也是能学到很多知识的。比如说，Handler与路径解耦这件事，如何做到路径改变不需要改变Handler内部的逻辑。</p>
+<h3 id="遇到的错误"><a href="#遇到的错误" class="headerlink" title="遇到的错误"></a>遇到的错误</h3><p><strong>invalid response</strong></p>
+<p>Chrome可能会报这个错误，此时检查一下header的设置是否正确（是否调用了end_headers）。</p>
+
+    </div>
+
+    
+    
+    
+
+      <footer class="post-footer">
+          <div class="post-tags">
+              <a href="/oldblog/tags/python/" rel="tag"># python</a>
+          </div>
+
+        
+
+
+        
+    <div class="post-nav">
+      <div class="post-nav-item">
+    <a href="/oldblog/2018/06/22/Ubuntu-desktop%E6%96%87%E4%BB%B6/" rel="prev" title="Ubuntu-desktop entry文件">
+      <i class="fa fa-chevron-left"></i> Ubuntu-desktop entry文件
+    </a></div>
+      <div class="post-nav-item">
+    <a href="/oldblog/2018/12/08/String%E6%BA%90%E7%A0%81%E9%98%85%E8%AF%BB/" rel="next" title="String源码阅读">
+      String源码阅读 <i class="fa fa-chevron-right"></i>
+    </a></div>
+    </div>
+      </footer>
+    
+  </article>
+  
+  
+  
+
+
+
+          </div>
+          
+
+<script>
+  window.addEventListener('tabs:register', () => {
+    let { activeClass } = CONFIG.comments;
+    if (CONFIG.comments.storage) {
+      activeClass = localStorage.getItem('comments_active') || activeClass;
+    }
+    if (activeClass) {
+      let activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
+      if (activeTab) {
+        activeTab.click();
+      }
+    }
+  });
+  if (CONFIG.comments.storage) {
+    window.addEventListener('tabs:click', event => {
+      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
+      let commentClass = event.target.classList[1];
+      localStorage.setItem('comments_active', commentClass);
+    });
+  }
+</script>
+
+        </div>
+          
+  
+  <div class="toggle sidebar-toggle">
+    <span class="toggle-line toggle-line-first"></span>
+    <span class="toggle-line toggle-line-middle"></span>
+    <span class="toggle-line toggle-line-last"></span>
+  </div>
+
+  <aside class="sidebar">
+    <div class="sidebar-inner">
+
+      <ul class="sidebar-nav motion-element">
+        <li class="sidebar-nav-toc">
+          文章目录
+        </li>
+        <li class="sidebar-nav-overview">
+          站点概览
+        </li>
+      </ul>
+
+      <!--noindex-->
+      <div class="post-toc-wrap sidebar-panel">
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E8%AE%BE%E8%AE%A1"><span class="nav-number">1.</span> <span class="nav-text">设计</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E7%B1%BB%E7%BB%93%E6%9E%84%E5%8F%8A%E8%B0%83%E7%94%A8%E9%A1%BA%E5%BA%8F"><span class="nav-number">2.</span> <span class="nav-text">类结构及调用顺序</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#Server%E4%B8%AD%E7%9A%84%E6%B5%81%E7%A8%8B"><span class="nav-number">2.1.</span> <span class="nav-text">Server中的流程</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#Handler%E4%B8%AD%E7%9A%84%E6%B5%81%E7%A8%8B"><span class="nav-number">2.2.</span> <span class="nav-text">Handler中的流程</span></a></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E4%BB%A3%E7%A0%81%E7%BC%96%E5%86%99"><span class="nav-number">3.</span> <span class="nav-text">代码编写</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E6%80%BB%E7%BB%93"><span class="nav-number">4.</span> <span class="nav-text">总结</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E9%81%87%E5%88%B0%E7%9A%84%E9%94%99%E8%AF%AF"><span class="nav-number">5.</span> <span class="nav-text">遇到的错误</span></a></li></ol></div>
+      </div>
+      <!--/noindex-->
+
+      <div class="site-overview-wrap sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+  <p class="site-author-name" itemprop="name">Charles</p>
+  <div class="site-description" itemprop="description">Be happy, please.</div>
+</div>
+<div class="site-state-wrap motion-element">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+          <a href="/oldblog/archives/">
+        
+          <span class="site-state-item-count">22</span>
+          <span class="site-state-item-name">日志</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-tags">
+            <a href="/oldblog/tags/">
+        <span class="site-state-item-count">14</span>
+        <span class="site-state-item-name">标签</span></a>
+      </div>
+  </nav>
+</div>
+
+
+
+      </div>
+
+    </div>
+  </aside>
+  <div id="sidebar-dimmer"></div>
+
+
+      </div>
+    </main>
+
+    <footer class="footer">
+      <div class="footer-inner">
+        
+
+        
+
+<div class="copyright">
+  
+  &copy; 
+  <span itemprop="copyrightYear">2021</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">Charles</span>
+</div>
+  <div class="powered-by">由 <a href="https://hexo.io/" class="theme-link" rel="noopener" target="_blank">Hexo</a> & <a href="https://pisces.theme-next.org/" class="theme-link" rel="noopener" target="_blank">NexT.Pisces</a> 强力驱动
+  </div>
+
+        
+
+
+
+
+
+
+
+
+      </div>
+    </footer>
+  </div>
+
+  
+  <script src="/oldblog/lib/anime.min.js"></script>
+  <script src="/oldblog/lib/velocity/velocity.min.js"></script>
+  <script src="/oldblog/lib/velocity/velocity.ui.min.js"></script>
+
+<script src="/oldblog/js/utils.js"></script>
+
+<script src="/oldblog/js/motion.js"></script>
+
+
+<script src="/oldblog/js/schemes/pisces.js"></script>
+
+
+<script src="/oldblog/js/next-boot.js"></script>
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  
+
+</body>
+</html>

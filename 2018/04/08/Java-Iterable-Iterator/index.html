@@ -1,0 +1,412 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 5.3.0">
+  <link rel="apple-touch-icon" sizes="180x180" href="/oldblog/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/oldblog/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/oldblog/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/oldblog/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/oldblog/css/main.css">
+
+
+<link rel="stylesheet" href="/oldblog/lib/font-awesome/css/all.min.css">
+
+<script id="hexo-configurations">
+    var NexT = window.NexT || {};
+    var CONFIG = {"hostname":"zhollow.github.io","root":"/oldblog/","scheme":"Pisces","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":false,"show_result":false,"style":null},"back2top":{"enable":true,"sidebar":false,"scrollpercent":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":false,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}}};
+  </script>
+
+  <meta name="description" content="why iterate ?很多语言都有类似于迭代器(Iterator)的结构，无论是语言本身的还是各种库提供的。 Python有Iterable，Iterator和generator C++有STL里面的iterator Java也有Iterable和Iterator 既然这么多地方都有迭代器的身影，那么就一定有使用它的优点。">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Java-Iterable&amp;Iterator">
+<meta property="og:url" content="http://zhollow.github.io/oldblog/2018/04/08/Java-Iterable-Iterator/index.html">
+<meta property="og:site_name" content="Charles&#39; Blog">
+<meta property="og:description" content="why iterate ?很多语言都有类似于迭代器(Iterator)的结构，无论是语言本身的还是各种库提供的。 Python有Iterable，Iterator和generator C++有STL里面的iterator Java也有Iterable和Iterator 既然这么多地方都有迭代器的身影，那么就一定有使用它的优点。">
+<meta property="og:locale" content="zh_CN">
+<meta property="article:published_time" content="2018-04-08T02:24:57.000Z">
+<meta property="article:modified_time" content="2018-04-08T04:38:35.000Z">
+<meta property="article:author" content="Charles">
+<meta property="article:tag" content="Java">
+<meta name="twitter:card" content="summary">
+
+<link rel="canonical" href="http://zhollow.github.io/oldblog/2018/04/08/Java-Iterable-Iterator/">
+
+
+<script id="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome : false,
+    isPost : true,
+    lang   : 'zh-CN'
+  };
+</script>
+
+  <title>Java-Iterable&Iterator | Charles' Blog</title>
+  
+
+
+
+
+
+
+  <noscript>
+  <style>
+  .use-motion .brand,
+  .use-motion .menu-item,
+  .sidebar-inner,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header { opacity: initial; }
+
+  .use-motion .site-title,
+  .use-motion .site-subtitle {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line-before i { left: initial; }
+  .use-motion .logo-line-after i { right: initial; }
+  </style>
+</noscript>
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="container use-motion">
+    <div class="headband"></div>
+
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="切换导航栏">
+      <span class="toggle-line toggle-line-first"></span>
+      <span class="toggle-line toggle-line-middle"></span>
+      <span class="toggle-line toggle-line-last"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/oldblog/" class="brand" rel="start">
+      <span class="logo-line-before"><i></i></span>
+      <h1 class="site-title">Charles' Blog</h1>
+      <span class="logo-line-after"><i></i></span>
+    </a>
+      <p class="site-subtitle" itemprop="description">For better me.</p>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+    </div>
+  </div>
+</div>
+
+
+
+
+<nav class="site-nav">
+  <ul id="menu" class="main-menu menu">
+        <li class="menu-item menu-item-home">
+
+    <a href="/oldblog/" rel="section"><i class="fa fa-home fa-fw"></i>首页</a>
+
+  </li>
+        <li class="menu-item menu-item-archives">
+
+    <a href="/oldblog/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>归档</a>
+
+  </li>
+  </ul>
+</nav>
+
+
+
+
+</div>
+    </header>
+
+    
+  <div class="back-to-top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+
+
+    <main class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          
+
+          <div class="content post posts-expand">
+            
+
+    
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="http://zhollow.github.io/oldblog/2018/04/08/Java-Iterable-Iterator/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/oldblog/images/avatar.gif">
+      <meta itemprop="name" content="Charles">
+      <meta itemprop="description" content="Be happy, please.">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Charles' Blog">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          Java-Iterable&Iterator
+        </h1>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+              
+
+              <time title="创建时间：2018-04-08 10:24:57 / 修改时间：12:38:35" itemprop="dateCreated datePublished" datetime="2018-04-08T10:24:57+08:00">2018-04-08</time>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+        <h2 id="why-iterate"><a href="#why-iterate" class="headerlink" title="why iterate ?"></a>why iterate ?</h2><p>很多语言都有类似于迭代器(Iterator)的结构，无论是语言本身的还是各种库提供的。</p>
+<p>Python有Iterable，Iterator和generator</p>
+<p>C++有STL里面的iterator</p>
+<p>Java也有Iterable和Iterator</p>
+<p>既然这么多地方都有迭代器的身影，那么就一定有使用它的优点。</p>
+<a id="more"></a>
+
+<p><strong>不用关心内部结构</strong></p>
+<p>一个容器，内部实现可以是数组，也可以是链表。有了迭代器，我们就能用一种统一的方法遍历元素，而不用关心其内部实现。</p>
+<h2 id="机制"><a href="#机制" class="headerlink" title="机制"></a>机制</h2><p>Java中的<strong>Iterable</strong>和<strong>Iterator</strong>是两个泛型接口，如下(JavaSE 8)</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="class"><span class="keyword">interface</span> <span class="title">Iterable</span>&lt;<span class="title">E</span>&gt;</span>&#123;</span><br><span class="line">    <span class="function">Iterator&lt;E&gt; <span class="title">iterator</span><span class="params">()</span></span>;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="keyword">public</span> <span class="class"><span class="keyword">interface</span> <span class="title">Iterator</span>&lt;<span class="title">E</span>&gt;</span>&#123;</span><br><span class="line">    <span class="function"><span class="keyword">boolean</span> <span class="title">hasNext</span><span class="params">()</span></span>;</span><br><span class="line">    <span class="function">E <span class="title">next</span><span class="params">()</span></span>;</span><br><span class="line">    <span class="function"><span class="keyword">default</span> <span class="keyword">void</span> <span class="title">forEachRemaining</span><span class="params">(Consumer&lt;? <span class="keyword">super</span> E&gt; action)</span></span>;</span><br><span class="line">    <span class="function"><span class="keyword">default</span> <span class="keyword">void</span> <span class="title">remove</span><span class="params">()</span></span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>下面一个示例遍历<code>ArrayList</code></p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">import</span> java.util.*;</span><br><span class="line"><span class="keyword">public</span> <span class="class"><span class="keyword">class</span> <span class="title">ClassA</span></span>&#123;</span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">void</span> <span class="title">main</span><span class="params">(String[] argv)</span></span>&#123;</span><br><span class="line">        ArrayList&lt;String&gt; list = <span class="keyword">new</span> ArrayList&lt;&gt;();</span><br><span class="line">        list.add(<span class="string">&quot;element1&quot;</span>);</span><br><span class="line">        list.add(<span class="string">&quot;element2&quot;</span>);</span><br><span class="line">        list.add(<span class="string">&quot;element3&quot;</span>);</span><br><span class="line">        <span class="keyword">for</span> (String s: list)</span><br><span class="line">            System.out.println(s);</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+<p><code>ArrayList</code>实现了<code>Collection</code>接口，而<code>Collection</code>又继承了<code>Iterable</code>接口，上面的<code>foreach</code>遍历相当于这样：</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">Iterator&lt;String&gt; it = list.iterator();</span><br><span class="line"><span class="keyword">while</span> (it.hasNext())</span><br><span class="line">    System.out.println(it.next());</span><br></pre></td></tr></table></figure>
+<p>再来看下<code>foreach</code>的使用，见<a target="_blank" rel="noopener" href="https://docs.oracle.com/javase/specs/jls/se8/html/jls-14.html#jls-14.14.2">链接</a></p>
+<blockquote>
+<p>  The type of the <em>Expression</em> must be <code>Iterable</code> or an array type, or a compile-time error occurs.</p>
+</blockquote>
+<p>即<code>foreach</code>必须被应用于<strong>数组</strong>或实现了<code>Iterable</code>接口的<strong>对象</strong></p>
+<p>所以到现在对于<code>Iterable</code>对象的<code>foreach</code>遍历过程已经很明了了</p>
+<ol>
+<li> 调用<code>iterator()</code>获得迭代器<code>it</code></li>
+<li> 调用<code>it.hasNext()</code> 如果返回真的话调用<code>it.next()</code></li>
+</ol>
+<h2 id="自定义迭代"><a href="#自定义迭代" class="headerlink" title="自定义迭代"></a>自定义迭代</h2><p>知道Iterable和Iterator的工作过程之后，我们可以尝试自己实现一个类似与容器的类。</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">import</span> java.util.*;</span><br><span class="line"></span><br><span class="line"><span class="keyword">public</span> <span class="class"><span class="keyword">class</span> <span class="title">Container</span> <span class="keyword">implements</span> <span class="title">Iterable</span>&lt;<span class="title">String</span>&gt; </span>&#123;</span><br><span class="line">    <span class="keyword">private</span> String[] data;</span><br><span class="line">    <span class="keyword">private</span> <span class="keyword">int</span> N;</span><br><span class="line"></span><br><span class="line">    <span class="comment">// 内部迭代器类，对以小写s开头的字符串迭代</span></span><br><span class="line">    <span class="keyword">private</span> <span class="class"><span class="keyword">class</span> <span class="title">SIter</span> <span class="keyword">implements</span> <span class="title">Iterator</span>&lt;<span class="title">String</span>&gt;</span>&#123;</span><br><span class="line">        <span class="keyword">public</span> <span class="keyword">int</span> start;</span><br><span class="line">        <span class="keyword">public</span> <span class="keyword">int</span> end;</span><br><span class="line">        <span class="function"><span class="keyword">public</span> <span class="title">SIter</span><span class="params">()</span></span>&#123;</span><br><span class="line">            start = <span class="number">0</span>;</span><br><span class="line">            end = N;</span><br><span class="line">        &#125;</span><br><span class="line"></span><br><span class="line">        <span class="function"><span class="keyword">public</span> String <span class="title">next</span><span class="params">()</span></span>&#123;</span><br><span class="line">            <span class="keyword">while</span> (!Container.<span class="keyword">this</span>.data[start].startsWith(<span class="string">&quot;s&quot;</span>) &amp;&amp; start &lt; end)</span><br><span class="line">                start++;</span><br><span class="line">            </span><br><span class="line">            <span class="comment">// 一旦调用next返回了一个值</span></span><br><span class="line">            <span class="comment">// 那么这个值就被&#x27;越过&#x27;了，所以要更新start</span></span><br><span class="line">            <span class="keyword">return</span> start &lt; end ? Container.<span class="keyword">this</span>.data[start++] : <span class="keyword">null</span>; </span><br><span class="line">        &#125;</span><br><span class="line">        <span class="function"><span class="keyword">public</span> <span class="keyword">boolean</span> <span class="title">hasNext</span><span class="params">()</span></span>&#123;</span><br><span class="line">            <span class="keyword">while</span> (start &lt; end)</span><br><span class="line">            &#123;</span><br><span class="line">                <span class="keyword">if</span> (Container.<span class="keyword">this</span>.data[start].startsWith(<span class="string">&quot;s&quot;</span>))</span><br><span class="line">                    <span class="keyword">break</span>;</span><br><span class="line">                start++;</span><br><span class="line">            &#125;</span><br><span class="line">            <span class="keyword">return</span> start &lt; end;</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="title">Container</span><span class="params">(<span class="keyword">int</span> capacity)</span></span>&#123;</span><br><span class="line">        data = <span class="keyword">new</span> String[capacity];</span><br><span class="line">        N = <span class="number">0</span>;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">public</span> Iterator&lt;String&gt; <span class="title">iterator</span><span class="params">()</span></span>&#123;</span><br><span class="line">        <span class="keyword">return</span> <span class="keyword">new</span> SIter();</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">boolean</span> <span class="title">add</span><span class="params">(String s)</span></span>&#123;</span><br><span class="line">        <span class="comment">// 判断是否已满</span></span><br><span class="line">        <span class="keyword">if</span> (N == data.length)</span><br><span class="line">            <span class="keyword">return</span> <span class="keyword">false</span>;</span><br><span class="line">        data[N++] = s;</span><br><span class="line">        <span class="keyword">return</span> <span class="keyword">true</span>;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">void</span> <span class="title">main</span><span class="params">(String[] argv)</span></span>&#123;</span><br><span class="line">        Container c = <span class="keyword">new</span> Container(<span class="number">10</span>);</span><br><span class="line">        c.add(<span class="string">&quot;super&quot;</span>);</span><br><span class="line">        c.add(<span class="string">&quot;uber&quot;</span>);</span><br><span class="line">        c.add(<span class="string">&quot;supreme&quot;</span>);</span><br><span class="line">        c.add(<span class="string">&quot;this is not shown&quot;</span>);</span><br><span class="line"></span><br><span class="line">        <span class="keyword">for</span> (String s: c)</span><br><span class="line">            System.out.println(s);</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+<p>可以将Iterator当成指向两个元素<strong>间隙</strong>的指针，一旦调用了<code>next()</code>那么它就越过一个元素到达下一个间隙，返回越过的元素，如果调用<code>remove()</code>（这里没详细讲）那么就越过一个元素并删除刚越过的元素。</p>
+
+    </div>
+
+    
+    
+    
+
+      <footer class="post-footer">
+          <div class="post-tags">
+              <a href="/oldblog/tags/Java/" rel="tag"># Java</a>
+          </div>
+
+        
+
+
+        
+    <div class="post-nav">
+      <div class="post-nav-item">
+    <a href="/oldblog/2018/03/30/Linux-%E5%90%84%E7%A7%8Duid/" rel="prev" title="Linux-各种uid">
+      <i class="fa fa-chevron-left"></i> Linux-各种uid
+    </a></div>
+      <div class="post-nav-item">
+    <a href="/oldblog/2018/04/17/ssh-%E7%AE%80%E5%8D%95%E9%85%8D%E7%BD%AE/" rel="next" title="ssh-简单配置">
+      ssh-简单配置 <i class="fa fa-chevron-right"></i>
+    </a></div>
+    </div>
+      </footer>
+    
+  </article>
+  
+  
+  
+
+
+
+          </div>
+          
+
+<script>
+  window.addEventListener('tabs:register', () => {
+    let { activeClass } = CONFIG.comments;
+    if (CONFIG.comments.storage) {
+      activeClass = localStorage.getItem('comments_active') || activeClass;
+    }
+    if (activeClass) {
+      let activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
+      if (activeTab) {
+        activeTab.click();
+      }
+    }
+  });
+  if (CONFIG.comments.storage) {
+    window.addEventListener('tabs:click', event => {
+      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
+      let commentClass = event.target.classList[1];
+      localStorage.setItem('comments_active', commentClass);
+    });
+  }
+</script>
+
+        </div>
+          
+  
+  <div class="toggle sidebar-toggle">
+    <span class="toggle-line toggle-line-first"></span>
+    <span class="toggle-line toggle-line-middle"></span>
+    <span class="toggle-line toggle-line-last"></span>
+  </div>
+
+  <aside class="sidebar">
+    <div class="sidebar-inner">
+
+      <ul class="sidebar-nav motion-element">
+        <li class="sidebar-nav-toc">
+          文章目录
+        </li>
+        <li class="sidebar-nav-overview">
+          站点概览
+        </li>
+      </ul>
+
+      <!--noindex-->
+      <div class="post-toc-wrap sidebar-panel">
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#why-iterate"><span class="nav-number">1.</span> <span class="nav-text">why iterate ?</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E6%9C%BA%E5%88%B6"><span class="nav-number">2.</span> <span class="nav-text">机制</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E8%87%AA%E5%AE%9A%E4%B9%89%E8%BF%AD%E4%BB%A3"><span class="nav-number">3.</span> <span class="nav-text">自定义迭代</span></a></li></ol></div>
+      </div>
+      <!--/noindex-->
+
+      <div class="site-overview-wrap sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+  <p class="site-author-name" itemprop="name">Charles</p>
+  <div class="site-description" itemprop="description">Be happy, please.</div>
+</div>
+<div class="site-state-wrap motion-element">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+          <a href="/oldblog/archives/">
+        
+          <span class="site-state-item-count">22</span>
+          <span class="site-state-item-name">日志</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-tags">
+            <a href="/oldblog/tags/">
+        <span class="site-state-item-count">14</span>
+        <span class="site-state-item-name">标签</span></a>
+      </div>
+  </nav>
+</div>
+
+
+
+      </div>
+
+    </div>
+  </aside>
+  <div id="sidebar-dimmer"></div>
+
+
+      </div>
+    </main>
+
+    <footer class="footer">
+      <div class="footer-inner">
+        
+
+        
+
+<div class="copyright">
+  
+  &copy; 
+  <span itemprop="copyrightYear">2021</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">Charles</span>
+</div>
+  <div class="powered-by">由 <a href="https://hexo.io/" class="theme-link" rel="noopener" target="_blank">Hexo</a> & <a href="https://pisces.theme-next.org/" class="theme-link" rel="noopener" target="_blank">NexT.Pisces</a> 强力驱动
+  </div>
+
+        
+
+
+
+
+
+
+
+
+      </div>
+    </footer>
+  </div>
+
+  
+  <script src="/oldblog/lib/anime.min.js"></script>
+  <script src="/oldblog/lib/velocity/velocity.min.js"></script>
+  <script src="/oldblog/lib/velocity/velocity.ui.min.js"></script>
+
+<script src="/oldblog/js/utils.js"></script>
+
+<script src="/oldblog/js/motion.js"></script>
+
+
+<script src="/oldblog/js/schemes/pisces.js"></script>
+
+
+<script src="/oldblog/js/next-boot.js"></script>
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  
+
+</body>
+</html>

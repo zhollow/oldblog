@@ -1,0 +1,482 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 5.3.0">
+  <link rel="apple-touch-icon" sizes="180x180" href="/oldblog/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/oldblog/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/oldblog/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/oldblog/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/oldblog/css/main.css">
+
+
+<link rel="stylesheet" href="/oldblog/lib/font-awesome/css/all.min.css">
+
+<script id="hexo-configurations">
+    var NexT = window.NexT || {};
+    var CONFIG = {"hostname":"zhollow.github.io","root":"/oldblog/","scheme":"Pisces","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":false,"show_result":false,"style":null},"back2top":{"enable":true,"sidebar":false,"scrollpercent":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":false,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}}};
+  </script>
+
+  <meta name="description" content="desktop entry文件介绍   The XDG Desktop Entry specification defines a standard for applications to integrate into application menus of desktop environments implementing the XDG Desktop Menuspecification.">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Ubuntu-desktop entry文件">
+<meta property="og:url" content="http://zhollow.github.io/oldblog/2018/06/22/Ubuntu-desktop%E6%96%87%E4%BB%B6/index.html">
+<meta property="og:site_name" content="Charles&#39; Blog">
+<meta property="og:description" content="desktop entry文件介绍   The XDG Desktop Entry specification defines a standard for applications to integrate into application menus of desktop environments implementing the XDG Desktop Menuspecification.">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="http://zhollow.github.io/oldblog/images/desktop-entry-result.png">
+<meta property="og:image" content="http://zhollow.github.io/oldblog/images/desktop-entry-category-result.png">
+<meta property="article:published_time" content="2018-06-22T07:00:44.000Z">
+<meta property="article:modified_time" content="2018-07-02T17:13:40.000Z">
+<meta property="article:author" content="Charles">
+<meta property="article:tag" content="Ubuntu">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="http://zhollow.github.io/oldblog/images/desktop-entry-result.png">
+
+<link rel="canonical" href="http://zhollow.github.io/oldblog/2018/06/22/Ubuntu-desktop%E6%96%87%E4%BB%B6/">
+
+
+<script id="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome : false,
+    isPost : true,
+    lang   : 'zh-CN'
+  };
+</script>
+
+  <title>Ubuntu-desktop entry文件 | Charles' Blog</title>
+  
+
+
+
+
+
+
+  <noscript>
+  <style>
+  .use-motion .brand,
+  .use-motion .menu-item,
+  .sidebar-inner,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header { opacity: initial; }
+
+  .use-motion .site-title,
+  .use-motion .site-subtitle {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line-before i { left: initial; }
+  .use-motion .logo-line-after i { right: initial; }
+  </style>
+</noscript>
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="container use-motion">
+    <div class="headband"></div>
+
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="切换导航栏">
+      <span class="toggle-line toggle-line-first"></span>
+      <span class="toggle-line toggle-line-middle"></span>
+      <span class="toggle-line toggle-line-last"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/oldblog/" class="brand" rel="start">
+      <span class="logo-line-before"><i></i></span>
+      <h1 class="site-title">Charles' Blog</h1>
+      <span class="logo-line-after"><i></i></span>
+    </a>
+      <p class="site-subtitle" itemprop="description">For better me.</p>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+    </div>
+  </div>
+</div>
+
+
+
+
+<nav class="site-nav">
+  <ul id="menu" class="main-menu menu">
+        <li class="menu-item menu-item-home">
+
+    <a href="/oldblog/" rel="section"><i class="fa fa-home fa-fw"></i>首页</a>
+
+  </li>
+        <li class="menu-item menu-item-archives">
+
+    <a href="/oldblog/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>归档</a>
+
+  </li>
+  </ul>
+</nav>
+
+
+
+
+</div>
+    </header>
+
+    
+  <div class="back-to-top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+
+
+    <main class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          
+
+          <div class="content post posts-expand">
+            
+
+    
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="http://zhollow.github.io/oldblog/2018/06/22/Ubuntu-desktop%E6%96%87%E4%BB%B6/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/oldblog/images/avatar.gif">
+      <meta itemprop="name" content="Charles">
+      <meta itemprop="description" content="Be happy, please.">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Charles' Blog">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          Ubuntu-desktop entry文件
+        </h1>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+
+              <time title="创建时间：2018-06-22 15:00:44" itemprop="dateCreated datePublished" datetime="2018-06-22T15:00:44+08:00">2018-06-22</time>
+            </span>
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="far fa-calendar-check"></i>
+                </span>
+                <span class="post-meta-item-text">更新于</span>
+                <time title="修改时间：2018-07-03 01:13:40" itemprop="dateModified" datetime="2018-07-03T01:13:40+08:00">2018-07-03</time>
+              </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+        <h3 id="desktop-entry文件介绍"><a href="#desktop-entry文件介绍" class="headerlink" title="desktop entry文件介绍"></a>desktop entry文件介绍</h3><blockquote>
+<p>  The <a target="_blank" rel="noopener" href="https://specifications.freedesktop.org/desktop-entry-spec/desktop-entry-spec-latest.html">XDG Desktop Entry specification</a> defines a standard for applications to integrate into application menus of <a target="_blank" rel="noopener" href="https://wiki.archlinux.org/index.php/Desktop_environment">desktop environments</a> implementing the <a target="_blank" rel="noopener" href="https://specifications.freedesktop.org/menu-spec/menu-spec-latest.html">XDG Desktop Menu</a>specification.</p>
+</blockquote>
+<p>一个desktop entry文件代表一个桌面环境中的一个菜单项，它的种类可以是应用、子菜单和链接。</p>
+<p>对于应用和链接，文件扩展名为<code>*.desktop</code>，对于子菜单，文件扩展名为<code>*.directory</code>，虽然directory意为目录，但是却是作为子菜单的扩展名。 </p>
+<p><code>*.directory</code>文件的出现知识为了更好的组织菜单项，不过不同的桌面环境对与菜单项的处理方式可能有所不同，所以并不是设置了directory文件就一定会出现某个菜单项。</p>
+<a id="more"></a>
+
+<h4 id="一些背景介绍"><a href="#一些背景介绍" class="headerlink" title="一些背景介绍"></a>一些背景介绍</h4><p><strong>XDG</strong>指的是<em>X Development Group</em>, 这是<a target="_blank" rel="noopener" href="https://freedesktop.org/">Freedesktop.org</a>的旧称，关于freedesktop的一些规定可以在<a target="_blank" rel="noopener" href="https://specifications.freedesktop.org上找到./">https://specifications.freedesktop.org上找到。</a></p>
+<h3 id="desktop文件位置"><a href="#desktop文件位置" class="headerlink" title="desktop文件位置"></a>desktop文件位置</h3><p>先来看一下<a target="_blank" rel="noopener" href="https://specifications.freedesktop.org/basedir-spec/basedir-spec-0.6.html">XDG Base Directory Specification</a>定义的一些环境变量：</p>
+<ul>
+<li>  <code>$XDG_DATA_HOME</code> - 用户数据存放的基准目录，如果没有设置，默认值为<code>$HOME/.local/share</code></li>
+<li>  <code>$XDG_CONFIG_HOME</code> - 用户配置存放的基准目录，默认为<code>$HOME/.config</code></li>
+<li>  <code>$XDG_DATA_DIRS</code> - 除了<code>$XDG_DATA_HOME</code>目录之外，一系列按优先级排序的基准目录，这些目录也是用于查找用户数据文件的。默认值为<code>/usr/local/share:/usr/share</code></li>
+<li>  <code>$XDG_CONFIG_DIRS</code> - 除了<code>$XDG_CONFIG_HOME</code>目录之外，一系列按优先级排序的基准目录，用于查找配置文件。默认值为<code>/etc/xdg</code></li>
+<li>  <code>$XDG_CACHE_HOME</code> - 用于存放用户的non-essential (cached) data。默认<code>$HOME/.cache</code></li>
+</ul>
+<p>一般来说，建议用户自己的文件放在<code>~/.local/share</code>和<code>~/.config</code>目录下。</p>
+<p>desktop entry文件放在<code>$XDG_DATA_HOME</code>和<code>$XDG_DATA_DIRS</code> 下面的<code>applications/</code> 或者<code>desktop-directories/</code>，分别对应上面说到的三种类型。</p>
+<h3 id="desktop文件格式"><a href="#desktop文件格式" class="headerlink" title="desktop文件格式"></a>desktop文件格式</h3><p>先上个例子：<code>/usr/share/applications/gedit.desktop</code></p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br></pre></td><td class="code"><pre><span class="line">[Desktop Entry]</span><br><span class="line">Name=gedit</span><br><span class="line">GenericName=Text Editor</span><br><span class="line">Comment=Edit text files</span><br><span class="line">Exec=gedit %U</span><br><span class="line">Terminal=false</span><br><span class="line">Type=Application</span><br><span class="line">StartupNotify=true</span><br><span class="line">Icon=accessories-text-editor</span><br><span class="line">Categories=GNOME;GTK;Utility;TextEditor;</span><br><span class="line">X-GNOME-DocPath=gedit/gedit.xml</span><br><span class="line">X-GNOME-FullName=Text Editor</span><br><span class="line">X-GNOME-Bugzilla-Bugzilla=GNOME</span><br><span class="line">X-GNOME-Bugzilla-Product=gedit</span><br><span class="line">X-GNOME-Bugzilla-Component=general</span><br><span class="line">X-GNOME-Bugzilla-Version=3.18.3</span><br><span class="line">X-GNOME-Bugzilla-ExtraInfoScript=/usr/share/gedit/gedit-bugreport</span><br><span class="line">Actions=new-window;new-document;</span><br><span class="line">Keywords=Text;Editor;Plaintext;Write;</span><br><span class="line">X-Ubuntu-Gettext-Domain=gedit</span><br><span class="line"></span><br><span class="line">X-AppStream-Ignore=true</span><br><span class="line"></span><br><span class="line">[Desktop Action new-window]</span><br><span class="line">Name=Open a New Window</span><br><span class="line">Exec=gedit --new-window</span><br><span class="line"></span><br><span class="line">[Desktop Action new-document]</span><br><span class="line">Name=Open a New Document</span><br><span class="line">Exec=gedit --new-document</span><br></pre></td></tr></table></figure>
+<p>从上面的例子可以看到，除了几行用方括号括住以外，<code>*.desktop/*.directory</code>文件的内容大部分都是一些形如<code>key=value</code>的键值对，参考<a target="_blank" rel="noopener" href="https://specifications.freedesktop.org/desktop-entry-spec/desktop-entry-spec-1.1.html#recognized-keys">官方文档</a>，下面列出几个常用的，</p>
+<table>
+<thead>
+<tr>
+<th>Keyword</th>
+<th>value</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Type</td>
+<td>为Application, Link或Directory</td>
+</tr>
+<tr>
+<td>Name</td>
+<td>程序名</td>
+</tr>
+<tr>
+<td>Comment</td>
+<td>注释</td>
+</tr>
+<tr>
+<td>Icon</td>
+<td>图标，参见<a target="_blank" rel="noopener" href="http://freedesktop.org/wiki/Standards/icon-theme-spec">Icon Theme Specification</a></td>
+</tr>
+<tr>
+<td>Exec</td>
+<td>执行程序的命令，只有Application类有，具体请看<a target="_blank" rel="noopener" href="https://specifications.freedesktop.org/desktop-entry-spec/desktop-entry-spec-1.1.html#exec-variables">文档</a></td>
+</tr>
+<tr>
+<td>Categories</td>
+<td>entry 应用所属的种类，使用分号分隔</td>
+</tr>
+<tr>
+<td>URL</td>
+<td>用于Link类型的菜单项</td>
+</tr>
+</tbody></table>
+<p>注意上面的并不是所有的菜单项都有的，URL就只是Link类型特有，具体查看官方文档。</p>
+<p>至于方括号之内的内容，叫做Group Header，常用的就是Desktop Entry和Desktop Action &lt;动作名称&gt;。试试在gedit的图标上右键，你看到了什么？是不是看到了两个选项：<em>Open a new window</em>和<em>Open a new document</em>。 在看看上面的desktop文件。我想你已经知道了，Desktop Action可用来添加操作，如果选择了<em>Open a new window</em>就执行<code>gedit --new-window</code>，如果选择了<em>Open a new document</em>就执行<code>gedit --new-document</code>，当然别忘了把这两个操作加入进去：<code>Actions=new-window;new-document;</code>。 </p>
+<h3 id="自己动手写"><a href="#自己动手写" class="headerlink" title="自己动手写"></a>自己动手写</h3><p>一般来说，用户自定义的desktop文件建议都放在用户的<code>~/.local/share</code>里面。</p>
+<h4 id="编写url-desktop-entry文件示例"><a href="#编写url-desktop-entry文件示例" class="headerlink" title="编写url desktop entry文件示例"></a>编写url desktop entry文件示例</h4><p><code>~/.local/share/applications/github.desktop</code>文件内容如下</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">[Desktop Entry]</span><br><span class="line">Type=Link</span><br><span class="line">Name=github</span><br><span class="line">URL=https://www.github.com</span><br><span class="line">Icon=github</span><br></pre></td></tr></table></figure>
+<p>图片文件是<code>~/.local/share/pixmaps/github.png</code>，当然可以放在别的可以找到的地方，查看<a target="_blank" rel="noopener" href="http://freedesktop.org/wiki/Standards/icon-theme-spec">Icon Theme Specification</a></p>
+<p>这样一个Link类型的desktop entry文件就创建好了，注意unity和gnome都<strong>不会</strong>在菜单中显示Link类型的菜单项，不过在文件管理器nautilus里面还是可以看到带有图标的链接的，点击也能打开浏览器跳转到github。</p>
+<h4 id="编写application-desktop-entry-文件示例"><a href="#编写application-desktop-entry-文件示例" class="headerlink" title="编写application desktop entry 文件示例"></a>编写application desktop entry 文件示例</h4><p>一个用于编辑<code>~/note.txt</code>的desktop entry</p>
+<p><code>~/.local/share/applications/note.desktop</code></p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">[Desktop Entry]</span><br><span class="line">Type=Application</span><br><span class="line">Name=Note</span><br><span class="line">Icon=accessories-text-editor</span><br><span class="line">Exec=bash -c &quot;gedit ~/note.txt&quot;</span><br></pre></td></tr></table></figure>
+<p>下面是两个示例的结果图，其中Note可以 在菜单上找到</p>
+<p><img src="/oldblog/images/desktop-entry-result.png" alt="desktop-entry-result"></p>
+<h4 id="编写directory文件"><a href="#编写directory文件" class="headerlink" title="编写directory文件"></a>编写directory文件</h4><p>接下来将自定义一个类型，并把刚刚定义的<code>note</code>菜单项放入其中。参考<a target="_blank" rel="noopener" href="https://specifications.freedesktop.org/menu-spec/menu-spec-1.0.html">Desktop Menu Specification</a></p>
+<ol>
+<li><p>编写<code>~/.local/share/desktop-directories/mytools.directory</code></p>
+ <figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">[Desktop Entry]</span><br><span class="line">Type=Directory</span><br><span class="line">Name=My Tools</span><br></pre></td></tr></table></figure></li>
+<li><p> 修改上面的<code>note.desktop</code>，添加<code>Categories=My tools;</code></p>
+</li>
+<li><p> 创建目录<code>~/.local/share/applications/mytools</code>，将<code>note.desktop</code>放入目录中</p>
+</li>
+<li><p>在<code>/etc/xdg/menus/applications-merged</code>目录下创建<code>mytools.menu</code>，写入下面内容</p>
+ <figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line">&lt;!DOCTYPE Menu PUBLIC &quot;-//freedesktop//DTD Menu 1.0//EN&quot;</span><br><span class="line">&quot;http://www.freedesktop.org/standards/menu-spec/menu-1.0.dtd&quot;&gt;</span><br><span class="line">&lt;Menu&gt;</span><br><span class="line">    &lt;Name&gt;Application&lt;/Name&gt;</span><br><span class="line">    &lt;Menu&gt;</span><br><span class="line">    &lt;Name&gt;My Tools&lt;/Name&gt;</span><br><span class="line">    &lt;Directory&gt;mytools.directory&lt;/Directory&gt;</span><br><span class="line">    &lt;Include&gt;</span><br><span class="line">      &lt;Category&gt;My Tools&lt;/Category&gt;</span><br><span class="line">    &lt;/Include&gt;</span><br><span class="line">    &lt;/Menu&gt;</span><br><span class="line">&lt;/Menu&gt;</span><br></pre></td></tr></table></figure>
+
+</li>
+</ol>
+<p><img src="/oldblog/images/desktop-entry-category-result.png" alt="结果图（cinnamon）"></p>
+<h3 id="参考链接"><a href="#参考链接" class="headerlink" title="参考链接"></a>参考链接</h3><p> <a target="_blank" rel="noopener" href="https://specifications.freedesktop.org/desktop-entry-spec/desktop-entry-spec-latest.html">XDG Desktop Entry specification</a></p>
+<p> <a target="_blank" rel="noopener" href="https://specifications.freedesktop.org/menu-spec/menu-spec-latest.html">XDG Desktop Menu</a></p>
+<p><a target="_blank" rel="noopener" href="https://specifications.freedesktop.org/basedir-spec/basedir-spec-0.6.html">XDG Base Directory Specification</a></p>
+<p><a target="_blank" rel="noopener" href="https://wiki.archlinux.org/index.php/desktop_entries#Key_definition">archlinux-destkop entries</a></p>
+<p><a target="_blank" rel="noopener" href="https://specifications.freedesktop.org/menu-spec/menu-spec-1.0.html">Desktop Menu Specification</a></p>
+
+    </div>
+
+    
+    
+    
+
+      <footer class="post-footer">
+          <div class="post-tags">
+              <a href="/oldblog/tags/Ubuntu/" rel="tag"># Ubuntu</a>
+          </div>
+
+        
+
+
+        
+    <div class="post-nav">
+      <div class="post-nav-item">
+    <a href="/oldblog/2018/05/02/Linux-%E6%90%AD%E5%BB%BAftp%E6%9C%8D%E5%8A%A1%E5%99%A8/" rel="prev" title="Linux-搭建ftp服务器">
+      <i class="fa fa-chevron-left"></i> Linux-搭建ftp服务器
+    </a></div>
+      <div class="post-nav-item">
+    <a href="/oldblog/2018/11/23/Python-%E7%AE%80%E6%98%93http%E6%9C%8D%E5%8A%A1%E5%99%A8/" rel="next" title="Python-简易http服务器">
+      Python-简易http服务器 <i class="fa fa-chevron-right"></i>
+    </a></div>
+    </div>
+      </footer>
+    
+  </article>
+  
+  
+  
+
+
+
+          </div>
+          
+
+<script>
+  window.addEventListener('tabs:register', () => {
+    let { activeClass } = CONFIG.comments;
+    if (CONFIG.comments.storage) {
+      activeClass = localStorage.getItem('comments_active') || activeClass;
+    }
+    if (activeClass) {
+      let activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
+      if (activeTab) {
+        activeTab.click();
+      }
+    }
+  });
+  if (CONFIG.comments.storage) {
+    window.addEventListener('tabs:click', event => {
+      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
+      let commentClass = event.target.classList[1];
+      localStorage.setItem('comments_active', commentClass);
+    });
+  }
+</script>
+
+        </div>
+          
+  
+  <div class="toggle sidebar-toggle">
+    <span class="toggle-line toggle-line-first"></span>
+    <span class="toggle-line toggle-line-middle"></span>
+    <span class="toggle-line toggle-line-last"></span>
+  </div>
+
+  <aside class="sidebar">
+    <div class="sidebar-inner">
+
+      <ul class="sidebar-nav motion-element">
+        <li class="sidebar-nav-toc">
+          文章目录
+        </li>
+        <li class="sidebar-nav-overview">
+          站点概览
+        </li>
+      </ul>
+
+      <!--noindex-->
+      <div class="post-toc-wrap sidebar-panel">
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-3"><a class="nav-link" href="#desktop-entry%E6%96%87%E4%BB%B6%E4%BB%8B%E7%BB%8D"><span class="nav-number">1.</span> <span class="nav-text">desktop entry文件介绍</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#%E4%B8%80%E4%BA%9B%E8%83%8C%E6%99%AF%E4%BB%8B%E7%BB%8D"><span class="nav-number">1.1.</span> <span class="nav-text">一些背景介绍</span></a></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#desktop%E6%96%87%E4%BB%B6%E4%BD%8D%E7%BD%AE"><span class="nav-number">2.</span> <span class="nav-text">desktop文件位置</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#desktop%E6%96%87%E4%BB%B6%E6%A0%BC%E5%BC%8F"><span class="nav-number">3.</span> <span class="nav-text">desktop文件格式</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E8%87%AA%E5%B7%B1%E5%8A%A8%E6%89%8B%E5%86%99"><span class="nav-number">4.</span> <span class="nav-text">自己动手写</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#%E7%BC%96%E5%86%99url-desktop-entry%E6%96%87%E4%BB%B6%E7%A4%BA%E4%BE%8B"><span class="nav-number">4.1.</span> <span class="nav-text">编写url desktop entry文件示例</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#%E7%BC%96%E5%86%99application-desktop-entry-%E6%96%87%E4%BB%B6%E7%A4%BA%E4%BE%8B"><span class="nav-number">4.2.</span> <span class="nav-text">编写application desktop entry 文件示例</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#%E7%BC%96%E5%86%99directory%E6%96%87%E4%BB%B6"><span class="nav-number">4.3.</span> <span class="nav-text">编写directory文件</span></a></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%8F%82%E8%80%83%E9%93%BE%E6%8E%A5"><span class="nav-number">5.</span> <span class="nav-text">参考链接</span></a></li></ol></div>
+      </div>
+      <!--/noindex-->
+
+      <div class="site-overview-wrap sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+  <p class="site-author-name" itemprop="name">Charles</p>
+  <div class="site-description" itemprop="description">Be happy, please.</div>
+</div>
+<div class="site-state-wrap motion-element">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+          <a href="/oldblog/archives/">
+        
+          <span class="site-state-item-count">22</span>
+          <span class="site-state-item-name">日志</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-tags">
+            <a href="/oldblog/tags/">
+        <span class="site-state-item-count">14</span>
+        <span class="site-state-item-name">标签</span></a>
+      </div>
+  </nav>
+</div>
+
+
+
+      </div>
+
+    </div>
+  </aside>
+  <div id="sidebar-dimmer"></div>
+
+
+      </div>
+    </main>
+
+    <footer class="footer">
+      <div class="footer-inner">
+        
+
+        
+
+<div class="copyright">
+  
+  &copy; 
+  <span itemprop="copyrightYear">2021</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">Charles</span>
+</div>
+  <div class="powered-by">由 <a href="https://hexo.io/" class="theme-link" rel="noopener" target="_blank">Hexo</a> & <a href="https://pisces.theme-next.org/" class="theme-link" rel="noopener" target="_blank">NexT.Pisces</a> 强力驱动
+  </div>
+
+        
+
+
+
+
+
+
+
+
+      </div>
+    </footer>
+  </div>
+
+  
+  <script src="/oldblog/lib/anime.min.js"></script>
+  <script src="/oldblog/lib/velocity/velocity.min.js"></script>
+  <script src="/oldblog/lib/velocity/velocity.ui.min.js"></script>
+
+<script src="/oldblog/js/utils.js"></script>
+
+<script src="/oldblog/js/motion.js"></script>
+
+
+<script src="/oldblog/js/schemes/pisces.js"></script>
+
+
+<script src="/oldblog/js/next-boot.js"></script>
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  
+
+</body>
+</html>

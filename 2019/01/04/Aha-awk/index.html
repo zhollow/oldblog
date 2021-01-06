@@ -1,0 +1,602 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 5.3.0">
+  <link rel="apple-touch-icon" sizes="180x180" href="/oldblog/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/oldblog/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/oldblog/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/oldblog/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/oldblog/css/main.css">
+
+
+<link rel="stylesheet" href="/oldblog/lib/font-awesome/css/all.min.css">
+
+<script id="hexo-configurations">
+    var NexT = window.NexT || {};
+    var CONFIG = {"hostname":"zhollow.github.io","root":"/oldblog/","scheme":"Pisces","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":false,"show_result":false,"style":null},"back2top":{"enable":true,"sidebar":false,"scrollpercent":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":false,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}}};
+  </script>
+
+  <meta name="description" content="在开始学Linux的时候就听说过awk这个工具，但当时觉得，这个工具，好像平时用不太到啊，于是就没怎么学。不过最近写脚本的时候，在网上看到了一些awk的脚本，惊叹于awk的文本处理能力，我想，是时候拿起awk这个文本处理神器了。">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Aha awk!">
+<meta property="og:url" content="http://zhollow.github.io/oldblog/2019/01/04/Aha-awk/index.html">
+<meta property="og:site_name" content="Charles&#39; Blog">
+<meta property="og:description" content="在开始学Linux的时候就听说过awk这个工具，但当时觉得，这个工具，好像平时用不太到啊，于是就没怎么学。不过最近写脚本的时候，在网上看到了一些awk的脚本，惊叹于awk的文本处理能力，我想，是时候拿起awk这个文本处理神器了。">
+<meta property="og:locale" content="zh_CN">
+<meta property="article:published_time" content="2019-01-04T10:55:02.000Z">
+<meta property="article:modified_time" content="2019-03-12T09:13:04.000Z">
+<meta property="article:author" content="Charles">
+<meta property="article:tag" content="tools">
+<meta name="twitter:card" content="summary">
+
+<link rel="canonical" href="http://zhollow.github.io/oldblog/2019/01/04/Aha-awk/">
+
+
+<script id="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome : false,
+    isPost : true,
+    lang   : 'zh-CN'
+  };
+</script>
+
+  <title>Aha awk! | Charles' Blog</title>
+  
+
+
+
+
+
+
+  <noscript>
+  <style>
+  .use-motion .brand,
+  .use-motion .menu-item,
+  .sidebar-inner,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header { opacity: initial; }
+
+  .use-motion .site-title,
+  .use-motion .site-subtitle {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line-before i { left: initial; }
+  .use-motion .logo-line-after i { right: initial; }
+  </style>
+</noscript>
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="container use-motion">
+    <div class="headband"></div>
+
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="切换导航栏">
+      <span class="toggle-line toggle-line-first"></span>
+      <span class="toggle-line toggle-line-middle"></span>
+      <span class="toggle-line toggle-line-last"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/oldblog/" class="brand" rel="start">
+      <span class="logo-line-before"><i></i></span>
+      <h1 class="site-title">Charles' Blog</h1>
+      <span class="logo-line-after"><i></i></span>
+    </a>
+      <p class="site-subtitle" itemprop="description">For better me.</p>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+    </div>
+  </div>
+</div>
+
+
+
+
+<nav class="site-nav">
+  <ul id="menu" class="main-menu menu">
+        <li class="menu-item menu-item-home">
+
+    <a href="/oldblog/" rel="section"><i class="fa fa-home fa-fw"></i>首页</a>
+
+  </li>
+        <li class="menu-item menu-item-archives">
+
+    <a href="/oldblog/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>归档</a>
+
+  </li>
+  </ul>
+</nav>
+
+
+
+
+</div>
+    </header>
+
+    
+  <div class="back-to-top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+
+
+    <main class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          
+
+          <div class="content post posts-expand">
+            
+
+    
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="http://zhollow.github.io/oldblog/2019/01/04/Aha-awk/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/oldblog/images/avatar.gif">
+      <meta itemprop="name" content="Charles">
+      <meta itemprop="description" content="Be happy, please.">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Charles' Blog">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          Aha awk!
+        </h1>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+
+              <time title="创建时间：2019-01-04 18:55:02" itemprop="dateCreated datePublished" datetime="2019-01-04T18:55:02+08:00">2019-01-04</time>
+            </span>
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="far fa-calendar-check"></i>
+                </span>
+                <span class="post-meta-item-text">更新于</span>
+                <time title="修改时间：2019-03-12 17:13:04" itemprop="dateModified" datetime="2019-03-12T17:13:04+08:00">2019-03-12</time>
+              </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+        <p>在开始学Linux的时候就听说过awk这个工具，但当时觉得，这个工具，好像平时用不太到啊，于是就没怎么学。不过最近写脚本的时候，在网上看到了一些awk的脚本，惊叹于awk的文本处理能力，我想，是时候拿起awk这个文本处理神器了。</p>
+<a id="more"></a>
+
+<h2 id="介绍"><a href="#介绍" class="headerlink" title="介绍"></a>介绍</h2><p>awk其实是<strong>A</strong>ho，<strong>W</strong>inberger和<strong>K</strong>ernighan三位大牛的首字母组合而成的。它既可以指awk这个可执行文件，也可以指awk这种语言，嗯，没错awk是一种语言！</p>
+<h2 id="Hello"><a href="#Hello" class="headerlink" title="Hello"></a>Hello</h2><p>先来个简单的程序，在终端输入下面代码：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">$ awk -F: <span class="string">&#x27;$1 == &quot;root&quot; &#123;print $0&#125;&#x27;</span> /etc/passwd</span><br></pre></td></tr></table></figure>
+<p>解释一下上面的这个命令，<code>-F:</code>指的是分割符为<code>:</code>，后面字符串的意思是，如果被分隔符分隔的第一项为<code>root</code>，那就输出这一行到标准输出。而/etc/passwd是awk的处理的文本。</p>
+<p>输出结果为：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">root:x:0:0:root:&#x2F;root:&#x2F;bin&#x2F;bash</span><br></pre></td></tr></table></figure>
+<h2 id="语言"><a href="#语言" class="headerlink" title="语言"></a>语言</h2><p>下面讲解一下awk的基本语法，其实awk的语法和C的语法有相似之处，如果不知道怎么用或者忘了，大可以用C的语法试试。</p>
+<p>当然，如果忘了awk语法或者某个函数的用法，man吧，特别详细。</p>
+<h3 id="模式与行为"><a href="#模式与行为" class="headerlink" title="模式与行为"></a>模式与行为</h3><p>从上面这个命令中我们可以窥见awk语法的大致组成，它是有<strong>模式</strong>和<strong>行为</strong>组成的。</p>
+<p>对于每一行，如果前面的模式匹配了，那么条件后面紧跟的行为就会被执行。这个模式可以是类似于上面<code>$1 == &quot;root&quot;</code>的逻辑表达式，也可以是正则表达式。</p>
+<p>上面的一行命令其实可以写成单独的脚本存储为a.awk：</p>
+<figure class="highlight awk"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">BEGIN</span> &#123;</span><br><span class="line">    FS=<span class="string">&quot;:&quot;</span>	<span class="comment">#设定分隔符</span></span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="variable">$1</span> == <span class="string">&quot;root&quot;</span> &#123;</span><br><span class="line">    print <span class="variable">$0</span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>然后使用命令<code>awk -f a.awk /etc/passwd</code>，执行效果是一样的。</p>
+<h4 id="模式"><a href="#模式" class="headerlink" title="模式"></a>模式</h4><p>awk中的模式有如下几种（man awk）：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line">BEGIN</span><br><span class="line">END</span><br><span class="line">BEGINFILE</span><br><span class="line">ENDFILE</span><br><span class="line">&#x2F;regular expression&#x2F;</span><br><span class="line">relational expression	#也就是$1 &#x3D;&#x3D; &quot;root&quot;这种，关系表达式</span><br><span class="line">pattern &amp;&amp; pattern</span><br><span class="line">pattern || pattern</span><br><span class="line">pattern ? pattern : pattern	#三目！awk强啊</span><br><span class="line">(pattern)</span><br><span class="line">! pattern</span><br><span class="line">pattern1, pattern2		#这将会匹配到pattern1到pattern2之间的内容，是一种range pattern，如果忘了，man</span><br></pre></td></tr></table></figure>
+<p>正则模式示例，显示当前目录下，大小的单位为K的文件。</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">$ ls -lh | awk <span class="string">&#x27;/([0-9]+\.)?[0-9]+K/ &#123; print $0&#125;&#x27;</span> </span><br></pre></td></tr></table></figure>
+<p>逻辑表达式示例，显示第3行的内容，NR的含义见下面的<a href="#%E5%86%85%E7%BD%AE%E5%8F%98%E9%87%8F">内置变量</a></p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">$ <span class="built_in">echo</span> -e <span class="string">&quot;a \n b \n c&quot;</span> | awk <span class="string">&#x27;NR == 3 &#123;print $0&#125;&#x27;</span></span><br></pre></td></tr></table></figure>
+<p>输出为c。</p>
+<p><strong>可以用正则来测试变量来匹配吗？</strong></p>
+<p>当然可以，见BEGIN&amp;END下面的例子。</p>
+<p><strong>BEGIN&amp;END</strong></p>
+<p>这两个是特殊的模式，跟在BEGIN后面的行为会在awk处理文件之前执行，一些初始化工作（比如设置FS）可以放到这里。</p>
+<p>而END后面的行为则是在文件被处理完毕之后被执行，善后工作可以放到这里。</p>
+<p>比如，下面的脚本统计目录下ctime为2019年的文件或目录数量：<span id="counter-demo"/></p>
+<figure class="highlight awk"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">#!/usr/bin/awk -f</span></span><br><span class="line"><span class="comment"># count2019.awk</span></span><br><span class="line"></span><br><span class="line"><span class="keyword">BEGIN</span> &#123;</span><br><span class="line">    CNT = <span class="number">0</span>;    <span class="comment"># counter</span></span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="variable">$6</span>~<span class="regexp">/2019(-[0-9]&#123;2&#125;)&#123;2&#125;/</span> &#123;	<span class="comment"># 注意这里测试第6个字段是否匹配正则</span></span><br><span class="line">    CNT ++;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="keyword">END</span> &#123;</span><br><span class="line">    printf <span class="string">&quot;processing finised, 2019 files/dirs count: %d&quot;</span>, CNT</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>运行：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">$ ls --full-time | awk -f count2019.awk</span><br><span class="line">processing finised, 2019 files/<span class="built_in">dirs</span> count: 4⏎</span><br></pre></td></tr></table></figure>
+
+
+<h4 id="行为"><a href="#行为" class="headerlink" title="行为"></a>行为</h4><p>行为在模式的后面，需要用大括号括住。</p>
+<p>行为中的语句可以用<code>;</code>分割，也可以用换行符<code>\n</code>分隔。</p>
+<h3 id="变量"><a href="#变量" class="headerlink" title="变量"></a>变量</h3><h4 id="定义变量"><a href="#定义变量" class="headerlink" title="定义变量"></a>定义变量</h4><p>awk中的变量直接用就行，和python一样，如果之前没有使用过这个变量，那么它的值为空。</p>
+<p>示例见<a href="#counter-demo">上面的计数器示例</a></p>
+<h4 id="数组"><a href="#数组" class="headerlink" title="数组"></a>数组</h4><p>其实awk里面的数组就是python里面的字典，连字符串都能当索引使。</p>
+<figure class="highlight awk"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">BEGIN</span> &#123;</span><br><span class="line">    favorites[<span class="string">&quot;singer&quot;</span>] = <span class="string">&quot;taylor swift&quot;</span></span><br><span class="line">    favorites[<span class="string">&quot;song&quot;</span>] = <span class="string">&quot;500 miles&quot;</span></span><br><span class="line"></span><br><span class="line">    <span class="keyword">for</span> (key <span class="keyword">in</span> favorites) &#123;</span><br><span class="line">        print favorites[key]</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>运行<code>awk -f array.awk</code>输出结果如下：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">500 miles</span><br><span class="line">taylor swift</span><br></pre></td></tr></table></figure>
+<h4 id="内置变量"><a href="#内置变量" class="headerlink" title="内置变量"></a>内置变量</h4><p>awk中有一些方便的内置变量，如下表（未全部列出）：</p>
+<table>
+<thead>
+<tr>
+<th>变量名</th>
+<th>作用</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>FILENAME</td>
+<td>输入的文本文件的文件名，如果是标准输入，空。</td>
+</tr>
+<tr>
+<td><code>$0</code></td>
+<td>当前记录的内容</td>
+</tr>
+<tr>
+<td><code>$1,$2,$3...</code></td>
+<td>当前记录被分隔符分割成很多字段<code>$num</code>表示num项（1起始）</td>
+</tr>
+<tr>
+<td>FS</td>
+<td>分隔符，默认空格</td>
+</tr>
+<tr>
+<td>RS</td>
+<td>输入记录分隔符，默认为<code>\n</code></td>
+</tr>
+<tr>
+<td>NF</td>
+<td>当前记录的字段数</td>
+</tr>
+<tr>
+<td>NR</td>
+<td>已经读入的记录数</td>
+</tr>
+<tr>
+<td>FNR</td>
+<td>当前输入文件的记录数</td>
+</tr>
+<tr>
+<td>OFS</td>
+<td>输出字段分隔符，默认空格</td>
+</tr>
+<tr>
+<td>ORS</td>
+<td>输出记录分隔符，默认换行 <code>\n</code></td>
+</tr>
+<tr>
+<td>ARGC</td>
+<td>命令行参数个数</td>
+</tr>
+<tr>
+<td>ARGV</td>
+<td>命令行参数数组</td>
+</tr>
+<tr>
+<td></td>
+<td></td>
+</tr>
+</tbody></table>
+<p>从上面的表中可以看到，其实一个文件是先被RS分隔成记录，然后这个记录再被FS分割成字段，所以准确地说awk其实是以记录为处理单元的，只不过这个RS默认是换行符。</p>
+<p><strong>ARGC&amp;ARGV</strong></p>
+<p>运行一下下面的程序就知道他们的意思了：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line">#!&#x2F;usr&#x2F;bin&#x2F;awk -f</span><br><span class="line"># argc.awk</span><br><span class="line"></span><br><span class="line">BEGIN&#123;</span><br><span class="line">    print ARGC</span><br><span class="line">    for (i &#x3D; 0 ; i &lt; ARGC ; i++) &#123;</span><br><span class="line">        print ARGV[i]</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">$ awk -f argc.awk /etc/passwd</span><br></pre></td></tr></table></figure>
+<p>输出结果：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">2</span><br><span class="line">awk</span><br><span class="line">&#x2F;etc&#x2F;passwd</span><br></pre></td></tr></table></figure>
+
+
+<h3 id="函数"><a href="#函数" class="headerlink" title="函数"></a>函数</h3><p>函数调用的格式可以是<code>printf(&quot;%s %d&quot;, &quot;hha&quot;, 3)</code>也可以是<code>printf &quot;%s %d&quot;, &quot;hah&quot;, 3</code></p>
+<p>示例：</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">$</span><span class="bash"> ls -l | awk <span class="string">&#x27;&#123;printf &quot;%15s %d\n&quot;,$9,$5&#125;&#x27;</span></span></span><br><span class="line"><span class="meta">$</span><span class="bash"> ls -l | awk <span class="string">&#x27;&#123;printf (&quot;%15s %d\n&quot;,$9,$5)&#125;&#x27;</span></span></span><br></pre></td></tr></table></figure>
+<h4 id="内置函数"><a href="#内置函数" class="headerlink" title="内置函数"></a>内置函数</h4><p>下面列举一部分常用的内置函数</p>
+<table>
+<thead>
+<tr>
+<th>函数</th>
+<th>功能</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>length(str)</code></td>
+<td>字符串长度</td>
+</tr>
+<tr>
+<td><code>index(str,sub)</code></td>
+<td>sub在str中的索引（1起始），如果无此子串，0</td>
+</tr>
+<tr>
+<td><code>match(str, regex)</code></td>
+<td>字面意思，0表示不匹配</td>
+</tr>
+<tr>
+<td><code>split(str,arr,regex)</code></td>
+<td>使用regex分割字符，把子字符串放入arr数组</td>
+</tr>
+<tr>
+<td><code>printf(format, expr-list)</code></td>
+<td>这个不解释</td>
+</tr>
+<tr>
+<td><code>tolower(str)</code></td>
+<td></td>
+</tr>
+<tr>
+<td><code>toupper(str)</code></td>
+<td></td>
+</tr>
+<tr>
+<td><code>systime()</code></td>
+<td>自1970-01-01,00:00:00至今的秒数，像不像time调用呢？</td>
+</tr>
+<tr>
+<td><code>strftime([format [,timestamp[,utc-flag]]])</code></td>
+<td>返回一个格式化的时间字符串。示例见下面。</td>
+</tr>
+<tr>
+<td><code>close(filename)</code></td>
+<td>关闭一个文件（awk还能直接输出到文件！）</td>
+</tr>
+<tr>
+<td><code>delete()</code></td>
+<td>删除数组中的一个元素</td>
+</tr>
+<tr>
+<td><code>exit(code)</code></td>
+<td>退出，code是返回值</td>
+</tr>
+<tr>
+<td><code>getline()</code></td>
+<td>获取下一行，由于下一行被读了，所以此次记录处理完之后是下下行</td>
+</tr>
+<tr>
+<td><code>next()</code></td>
+<td>读取下一行，然后继续执行</td>
+</tr>
+<tr>
+<td><code>system()</code></td>
+<td>就是stdlib中的system那样的功能</td>
+</tr>
+</tbody></table>
+<p><strong>systime&amp;strftime</strong></p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">$</span><span class="bash"> awk <span class="string">&#x27;BEGIN &#123;print strftime(&quot;%F&quot;,systime())&#125;&#x27;</span></span></span><br></pre></td></tr></table></figure>
+<h4 id="自定义函数"><a href="#自定义函数" class="headerlink" title="自定义函数"></a>自定义函数</h4><p>看个例子就会了：</p>
+<figure class="highlight awk"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">#!/usr/bin/awk -f</span></span><br><span class="line"><span class="comment"># strlen.awk</span></span><br><span class="line"><span class="keyword">function</span> strlen(str) &#123;</span><br><span class="line">    return length(str)</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="keyword">BEGIN</span> &#123;</span><br><span class="line">    message = <span class="string">&quot;hello&quot;</span></span><br><span class="line">    printf <span class="string">&quot;length of %s is %d&quot;</span>, message, strlen(message)</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<h3 id="控制语句"><a href="#控制语句" class="headerlink" title="控制语句"></a>控制语句</h3><h4 id="分支语句"><a href="#分支语句" class="headerlink" title="分支语句"></a>分支语句</h4><p>只有一种，那就是<code>if...else...</code>，和C中一样的用法。</p>
+<h4 id="循环语句"><a href="#循环语句" class="headerlink" title="循环语句"></a>循环语句</h4><p>四种，分别是<code>while</code>，<code>do...while</code>，<code>for</code>和<code>foreach</code>（我善做主张起了个名字）</p>
+<p>示例如下：</p>
+<figure class="highlight awk"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">#!/usr/bin/awk -f</span></span><br><span class="line"><span class="comment"># loop.awk</span></span><br><span class="line"></span><br><span class="line"><span class="keyword">BEGIN</span> &#123;</span><br><span class="line">    <span class="keyword">for</span> (i = <span class="number">0</span> ; i &lt; <span class="number">10</span> ; i++)&#123;</span><br><span class="line">        arr[i] = i*<span class="number">2</span>;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">for</span> (idx <span class="keyword">in</span> arr) &#123;</span><br><span class="line">        printf <span class="string">&quot;arr[%d] = %d\n&quot;</span>,idx,arr[idx]</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    i = <span class="number">9</span> </span><br><span class="line">    <span class="keyword">while</span> (i &gt;= <span class="number">0</span>) &#123;</span><br><span class="line">        arr[i] = <span class="number">0</span>;</span><br><span class="line">        i--;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    j = <span class="number">0</span></span><br><span class="line">    <span class="keyword">do</span>&#123;</span><br><span class="line">        print arr[j]</span><br><span class="line">        j++</span><br><span class="line">    &#125; <span class="keyword">while</span>(j &lt; <span class="number">10</span>)</span><br><span class="line">&#125;</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+<p>运行<code>awk -f loop.awk</code>结果为：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br></pre></td><td class="code"><pre><span class="line">arr[0] &#x3D; 0</span><br><span class="line">arr[1] &#x3D; 2</span><br><span class="line">arr[2] &#x3D; 4</span><br><span class="line">arr[3] &#x3D; 6</span><br><span class="line">arr[4] &#x3D; 8</span><br><span class="line">arr[5] &#x3D; 10</span><br><span class="line">arr[6] &#x3D; 12</span><br><span class="line">arr[7] &#x3D; 14</span><br><span class="line">arr[8] &#x3D; 16</span><br><span class="line">arr[9] &#x3D; 18</span><br><span class="line">0</span><br><span class="line">0</span><br><span class="line">0</span><br><span class="line">0</span><br><span class="line">0</span><br><span class="line">0</span><br><span class="line">0</span><br><span class="line">0</span><br><span class="line">0</span><br><span class="line">0</span><br></pre></td></tr></table></figure>
+<h3 id="输入输出"><a href="#输入输出" class="headerlink" title="输入输出"></a>输入输出</h3><p>可以在awk脚本中直接输出到文件中，这需要用到awk中的重定向功能，和shell里面的重定向一样，使用的符号是<code>&gt;,&gt;&gt;</code>（当然没有输入重定向）</p>
+<p>示例：</p>
+<figure class="highlight awk"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">#!/usr/bin/awk</span></span><br><span class="line"><span class="comment"># redirect.awk</span></span><br><span class="line"><span class="keyword">BEGIN</span> &#123;</span><br><span class="line">    print <span class="string">&quot;test&quot;</span> &gt; <span class="string">&quot;/tmp/awkoutput&quot;</span></span><br><span class="line">    close(<span class="string">&quot;/tmp/awkoutput&quot;</span>) <span class="comment">#一定要close，不然不会输出的，而且不关闭会资源泄漏</span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<hr>
+<h3 id="高级用法"><a href="#高级用法" class="headerlink" title="高级用法"></a>高级用法</h3><h4 id="调用外部命令"><a href="#调用外部命令" class="headerlink" title="调用外部命令"></a>调用外部命令</h4><p>可以使用两种方法在awk中调用外部命令</p>
+<h5 id="system"><a href="#system" class="headerlink" title="system()"></a>system()</h5><figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">$</span><span class="bash"> awk <span class="string">&#x27;BEGIN &#123;ret = system(&quot;date&quot;); printf &quot;return value: %d\n&quot;, ret&#125;&#x27;</span></span></span><br></pre></td></tr></table></figure>
+<p>ret是命令的返回值</p>
+<h5 id="cmd-getline"><a href="#cmd-getline" class="headerlink" title="cmd|getline"></a>cmd|getline</h5><p>cmd是命令字符串, 命令执行的输出字符串被存在<code>$0</code>中.</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">$</span><span class="bash"> awk <span class="string">&#x27;BEGIN &#123;&quot;date&quot;|getline; printf &quot;result: %s\n&quot;, $0&#125;&#x27;</span></span></span><br></pre></td></tr></table></figure>
+<h4 id="格式化字符串"><a href="#格式化字符串" class="headerlink" title="格式化字符串"></a>格式化字符串</h4><p>除了格式化输出的printf, awk中还有格式话字符串的函数, 向c一样, 是sprintf:</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">$</span><span class="bash"> awk <span class="string">&#x27;BEGIN &#123;var = sprintf(&quot;[%8.3f]&quot;,3.141592654); print var&#125;&#x27;</span></span></span><br><span class="line">[   3.142]</span><br></pre></td></tr></table></figure>
+<p>更多高级用法，就在实践中摸索吧！</p>
+<h3 id="示例记录"><a href="#示例记录" class="headerlink" title="示例记录"></a>示例记录</h3><h4 id="去除重复行"><a href="#去除重复行" class="headerlink" title="去除重复行"></a>去除重复行</h4><figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">$</span><span class="bash"> <span class="built_in">echo</span> abbbbccdededf | sed <span class="string">&#x27;s/\(.\)/\1\n/g&#x27;</span> | awk <span class="string">&#x27;!a[$0]++&#x27;</span></span></span><br><span class="line">a</span><br><span class="line">b</span><br><span class="line">c</span><br><span class="line">d</span><br><span class="line">e</span><br><span class="line">f</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+
+
+<p>参考资料：</p>
+<p><a target="_blank" rel="noopener" href="https://www.tutorialspoint.com/awk/awk_built_in_functions.htm">AWK - Built-in Functions</a></p>
+<p>《Linux就是这个范儿》（好书）</p>
+
+    </div>
+
+    
+    
+    
+
+      <footer class="post-footer">
+          <div class="post-tags">
+              <a href="/oldblog/tags/tools/" rel="tag"># tools</a>
+          </div>
+
+        
+
+
+        
+    <div class="post-nav">
+      <div class="post-nav-item">
+    <a href="/oldblog/2018/12/24/%E7%BD%91%E6%98%93%E4%BA%91%E8%AF%84%E8%AE%BAapi%E5%88%86%E6%9E%90/" rel="prev" title="网易云评论api分析">
+      <i class="fa fa-chevron-left"></i> 网易云评论api分析
+    </a></div>
+      <div class="post-nav-item">
+    <a href="/oldblog/2019/01/18/Spring-boot%E8%AF%BB%E5%8F%96properties-yaml%E9%85%8D%E7%BD%AE%E6%96%87%E4%BB%B6/" rel="next" title="Spring-boot读取properties/yaml配置文件">
+      Spring-boot读取properties/yaml配置文件 <i class="fa fa-chevron-right"></i>
+    </a></div>
+    </div>
+      </footer>
+    
+  </article>
+  
+  
+  
+
+
+
+          </div>
+          
+
+<script>
+  window.addEventListener('tabs:register', () => {
+    let { activeClass } = CONFIG.comments;
+    if (CONFIG.comments.storage) {
+      activeClass = localStorage.getItem('comments_active') || activeClass;
+    }
+    if (activeClass) {
+      let activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
+      if (activeTab) {
+        activeTab.click();
+      }
+    }
+  });
+  if (CONFIG.comments.storage) {
+    window.addEventListener('tabs:click', event => {
+      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
+      let commentClass = event.target.classList[1];
+      localStorage.setItem('comments_active', commentClass);
+    });
+  }
+</script>
+
+        </div>
+          
+  
+  <div class="toggle sidebar-toggle">
+    <span class="toggle-line toggle-line-first"></span>
+    <span class="toggle-line toggle-line-middle"></span>
+    <span class="toggle-line toggle-line-last"></span>
+  </div>
+
+  <aside class="sidebar">
+    <div class="sidebar-inner">
+
+      <ul class="sidebar-nav motion-element">
+        <li class="sidebar-nav-toc">
+          文章目录
+        </li>
+        <li class="sidebar-nav-overview">
+          站点概览
+        </li>
+      </ul>
+
+      <!--noindex-->
+      <div class="post-toc-wrap sidebar-panel">
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#%E4%BB%8B%E7%BB%8D"><span class="nav-number">1.</span> <span class="nav-text">介绍</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Hello"><span class="nav-number">2.</span> <span class="nav-text">Hello</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E8%AF%AD%E8%A8%80"><span class="nav-number">3.</span> <span class="nav-text">语言</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E6%A8%A1%E5%BC%8F%E4%B8%8E%E8%A1%8C%E4%B8%BA"><span class="nav-number">3.1.</span> <span class="nav-text">模式与行为</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#%E6%A8%A1%E5%BC%8F"><span class="nav-number">3.1.1.</span> <span class="nav-text">模式</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#%E8%A1%8C%E4%B8%BA"><span class="nav-number">3.1.2.</span> <span class="nav-text">行为</span></a></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%8F%98%E9%87%8F"><span class="nav-number">3.2.</span> <span class="nav-text">变量</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#%E5%AE%9A%E4%B9%89%E5%8F%98%E9%87%8F"><span class="nav-number">3.2.1.</span> <span class="nav-text">定义变量</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#%E6%95%B0%E7%BB%84"><span class="nav-number">3.2.2.</span> <span class="nav-text">数组</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#%E5%86%85%E7%BD%AE%E5%8F%98%E9%87%8F"><span class="nav-number">3.2.3.</span> <span class="nav-text">内置变量</span></a></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%87%BD%E6%95%B0"><span class="nav-number">3.3.</span> <span class="nav-text">函数</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#%E5%86%85%E7%BD%AE%E5%87%BD%E6%95%B0"><span class="nav-number">3.3.1.</span> <span class="nav-text">内置函数</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#%E8%87%AA%E5%AE%9A%E4%B9%89%E5%87%BD%E6%95%B0"><span class="nav-number">3.3.2.</span> <span class="nav-text">自定义函数</span></a></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E6%8E%A7%E5%88%B6%E8%AF%AD%E5%8F%A5"><span class="nav-number">3.4.</span> <span class="nav-text">控制语句</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#%E5%88%86%E6%94%AF%E8%AF%AD%E5%8F%A5"><span class="nav-number">3.4.1.</span> <span class="nav-text">分支语句</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#%E5%BE%AA%E7%8E%AF%E8%AF%AD%E5%8F%A5"><span class="nav-number">3.4.2.</span> <span class="nav-text">循环语句</span></a></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E8%BE%93%E5%85%A5%E8%BE%93%E5%87%BA"><span class="nav-number">3.5.</span> <span class="nav-text">输入输出</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E9%AB%98%E7%BA%A7%E7%94%A8%E6%B3%95"><span class="nav-number">3.6.</span> <span class="nav-text">高级用法</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#%E8%B0%83%E7%94%A8%E5%A4%96%E9%83%A8%E5%91%BD%E4%BB%A4"><span class="nav-number">3.6.1.</span> <span class="nav-text">调用外部命令</span></a><ol class="nav-child"><li class="nav-item nav-level-5"><a class="nav-link" href="#system"><span class="nav-number">3.6.1.1.</span> <span class="nav-text">system()</span></a></li><li class="nav-item nav-level-5"><a class="nav-link" href="#cmd-getline"><span class="nav-number">3.6.1.2.</span> <span class="nav-text">cmd|getline</span></a></li></ol></li><li class="nav-item nav-level-4"><a class="nav-link" href="#%E6%A0%BC%E5%BC%8F%E5%8C%96%E5%AD%97%E7%AC%A6%E4%B8%B2"><span class="nav-number">3.6.2.</span> <span class="nav-text">格式化字符串</span></a></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E7%A4%BA%E4%BE%8B%E8%AE%B0%E5%BD%95"><span class="nav-number">3.7.</span> <span class="nav-text">示例记录</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#%E5%8E%BB%E9%99%A4%E9%87%8D%E5%A4%8D%E8%A1%8C"><span class="nav-number">3.7.1.</span> <span class="nav-text">去除重复行</span></a></li></ol></li></ol></li></ol></div>
+      </div>
+      <!--/noindex-->
+
+      <div class="site-overview-wrap sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+  <p class="site-author-name" itemprop="name">Charles</p>
+  <div class="site-description" itemprop="description">Be happy, please.</div>
+</div>
+<div class="site-state-wrap motion-element">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+          <a href="/oldblog/archives/">
+        
+          <span class="site-state-item-count">22</span>
+          <span class="site-state-item-name">日志</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-tags">
+            <a href="/oldblog/tags/">
+        <span class="site-state-item-count">14</span>
+        <span class="site-state-item-name">标签</span></a>
+      </div>
+  </nav>
+</div>
+
+
+
+      </div>
+
+    </div>
+  </aside>
+  <div id="sidebar-dimmer"></div>
+
+
+      </div>
+    </main>
+
+    <footer class="footer">
+      <div class="footer-inner">
+        
+
+        
+
+<div class="copyright">
+  
+  &copy; 
+  <span itemprop="copyrightYear">2021</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">Charles</span>
+</div>
+  <div class="powered-by">由 <a href="https://hexo.io/" class="theme-link" rel="noopener" target="_blank">Hexo</a> & <a href="https://pisces.theme-next.org/" class="theme-link" rel="noopener" target="_blank">NexT.Pisces</a> 强力驱动
+  </div>
+
+        
+
+
+
+
+
+
+
+
+      </div>
+    </footer>
+  </div>
+
+  
+  <script src="/oldblog/lib/anime.min.js"></script>
+  <script src="/oldblog/lib/velocity/velocity.min.js"></script>
+  <script src="/oldblog/lib/velocity/velocity.ui.min.js"></script>
+
+<script src="/oldblog/js/utils.js"></script>
+
+<script src="/oldblog/js/motion.js"></script>
+
+
+<script src="/oldblog/js/schemes/pisces.js"></script>
+
+
+<script src="/oldblog/js/next-boot.js"></script>
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  
+
+</body>
+</html>

@@ -1,0 +1,452 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 5.3.0">
+  <link rel="apple-touch-icon" sizes="180x180" href="/oldblog/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/oldblog/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/oldblog/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/oldblog/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/oldblog/css/main.css">
+
+
+<link rel="stylesheet" href="/oldblog/lib/font-awesome/css/all.min.css">
+
+<script id="hexo-configurations">
+    var NexT = window.NexT || {};
+    var CONFIG = {"hostname":"zhollow.github.io","root":"/oldblog/","scheme":"Pisces","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":false,"show_result":false,"style":null},"back2top":{"enable":true,"sidebar":false,"scrollpercent":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":false,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}}};
+  </script>
+
+  <meta name="description" content="本文介绍一下阅读redis源码时的一些非常基础的知识。 redis是一个存储键值对的NoSQL数据库，其中键类型为字符串，而值类型有7种：    String   List   Set   Sorted Set   Hashes   Bit arrays（其实还是String）   HyperLogLog">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Redis-源码阅读基础">
+<meta property="og:url" content="http://zhollow.github.io/oldblog/2018/12/18/Redis-%E6%BA%90%E7%A0%81%E9%98%85%E8%AF%BB%E5%9F%BA%E7%A1%80/index.html">
+<meta property="og:site_name" content="Charles&#39; Blog">
+<meta property="og:description" content="本文介绍一下阅读redis源码时的一些非常基础的知识。 redis是一个存储键值对的NoSQL数据库，其中键类型为字符串，而值类型有7种：    String   List   Set   Sorted Set   Hashes   Bit arrays（其实还是String）   HyperLogLog">
+<meta property="og:locale" content="zh_CN">
+<meta property="article:published_time" content="2018-12-17T16:01:29.000Z">
+<meta property="article:modified_time" content="2018-12-22T13:33:25.000Z">
+<meta property="article:author" content="Charles">
+<meta property="article:tag" content="redis">
+<meta property="article:tag" content="源码">
+<meta name="twitter:card" content="summary">
+
+<link rel="canonical" href="http://zhollow.github.io/oldblog/2018/12/18/Redis-%E6%BA%90%E7%A0%81%E9%98%85%E8%AF%BB%E5%9F%BA%E7%A1%80/">
+
+
+<script id="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome : false,
+    isPost : true,
+    lang   : 'zh-CN'
+  };
+</script>
+
+  <title>Redis-源码阅读基础 | Charles' Blog</title>
+  
+
+
+
+
+
+
+  <noscript>
+  <style>
+  .use-motion .brand,
+  .use-motion .menu-item,
+  .sidebar-inner,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header { opacity: initial; }
+
+  .use-motion .site-title,
+  .use-motion .site-subtitle {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line-before i { left: initial; }
+  .use-motion .logo-line-after i { right: initial; }
+  </style>
+</noscript>
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="container use-motion">
+    <div class="headband"></div>
+
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="切换导航栏">
+      <span class="toggle-line toggle-line-first"></span>
+      <span class="toggle-line toggle-line-middle"></span>
+      <span class="toggle-line toggle-line-last"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/oldblog/" class="brand" rel="start">
+      <span class="logo-line-before"><i></i></span>
+      <h1 class="site-title">Charles' Blog</h1>
+      <span class="logo-line-after"><i></i></span>
+    </a>
+      <p class="site-subtitle" itemprop="description">For better me.</p>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+    </div>
+  </div>
+</div>
+
+
+
+
+<nav class="site-nav">
+  <ul id="menu" class="main-menu menu">
+        <li class="menu-item menu-item-home">
+
+    <a href="/oldblog/" rel="section"><i class="fa fa-home fa-fw"></i>首页</a>
+
+  </li>
+        <li class="menu-item menu-item-archives">
+
+    <a href="/oldblog/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>归档</a>
+
+  </li>
+  </ul>
+</nav>
+
+
+
+
+</div>
+    </header>
+
+    
+  <div class="back-to-top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+
+
+    <main class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          
+
+          <div class="content post posts-expand">
+            
+
+    
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="http://zhollow.github.io/oldblog/2018/12/18/Redis-%E6%BA%90%E7%A0%81%E9%98%85%E8%AF%BB%E5%9F%BA%E7%A1%80/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/oldblog/images/avatar.gif">
+      <meta itemprop="name" content="Charles">
+      <meta itemprop="description" content="Be happy, please.">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Charles' Blog">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          Redis-源码阅读基础
+        </h1>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+
+              <time title="创建时间：2018-12-18 00:01:29" itemprop="dateCreated datePublished" datetime="2018-12-18T00:01:29+08:00">2018-12-18</time>
+            </span>
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="far fa-calendar-check"></i>
+                </span>
+                <span class="post-meta-item-text">更新于</span>
+                <time title="修改时间：2018-12-22 21:33:25" itemprop="dateModified" datetime="2018-12-22T21:33:25+08:00">2018-12-22</time>
+              </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+        <p>本文介绍一下阅读redis源码时的一些非常基础的知识。</p>
+<p>redis是一个存储键值对的NoSQL数据库，其中键类型为字符串，而值类型有7种：</p>
+<ul>
+<li>  String</li>
+<li>  List</li>
+<li>  Set</li>
+<li>  Sorted Set</li>
+<li>  Hashes</li>
+<li>  Bit arrays（其实还是String）</li>
+<li>  HyperLogLog</li>
+</ul>
+<a id="more"></a>
+
+<h3 id="redisObject"><a href="#redisObject" class="headerlink" title="redisObject"></a>redisObject</h3><p>Redis的数据在源码中是以redisObject的形式存在的，<a target="_blank" rel="noopener" href="https://github.com/antirez/redis/blob/129f2d2746ca80451d8c84b223b568298020b125/src/server.h#L603">github</a>：</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">typedef</span> <span class="class"><span class="keyword">struct</span> <span class="title">redisObject</span> &#123;</span></span><br><span class="line">    <span class="keyword">unsigned</span> type:<span class="number">4</span>;</span><br><span class="line">    <span class="keyword">unsigned</span> encoding:<span class="number">4</span>;</span><br><span class="line">    <span class="keyword">unsigned</span> lru:LRU_BITS; <span class="comment">/* LRU time (relative to global lru_clock) or</span></span><br><span class="line"><span class="comment">                            * LFU data (least significant 8 bits frequency</span></span><br><span class="line"><span class="comment">                            * and most significant 16 bits access time). */</span></span><br><span class="line">    <span class="keyword">int</span> refcount;</span><br><span class="line">    <span class="keyword">void</span> *ptr;</span><br><span class="line">&#125; robj;</span><br></pre></td></tr></table></figure>
+<h4 id="type"><a href="#type" class="headerlink" title="type"></a>type</h4><p>而这里面的type字段有五种取值，对应五种数据类型，<a target="_blank" rel="noopener" href="https://github.com/antirez/redis/blob/129f2d2746ca80451d8c84b223b568298020b125/src/server.h#L463">github</a>：</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">/* A redis object, that is a type able to hold a string / list / set */</span></span><br><span class="line"><span class="comment">/* The actual Redis Object */</span></span><br><span class="line"><span class="meta">#<span class="meta-keyword">define</span> OBJ_STRING 0    <span class="comment">/* String object. */</span></span></span><br><span class="line"><span class="meta">#<span class="meta-keyword">define</span> OBJ_LIST 1      <span class="comment">/* List object. */</span></span></span><br><span class="line"><span class="meta">#<span class="meta-keyword">define</span> OBJ_SET 2       <span class="comment">/* Set object. */</span></span></span><br><span class="line"><span class="meta">#<span class="meta-keyword">define</span> OBJ_ZSET 3      <span class="comment">/* Sorted set object. */</span></span></span><br><span class="line"><span class="meta">#<span class="meta-keyword">define</span> OBJ_HASH 4      <span class="comment">/* Hash object. */</span></span></span><br></pre></td></tr></table></figure>
+<h4 id="encoding"><a href="#encoding" class="headerlink" title="encoding"></a>encoding</h4><p>下面是encoding的取值，<a target="_blank" rel="noopener" href="https://github.com/antirez/redis/blob/81008bf99e131a2e56ccf467a6c60debb522759f/src/server.h#L583">github代码行</a></p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// server.h</span></span><br><span class="line"><span class="comment">/* Objects encoding. Some kind of objects like Strings and Hashes can be</span></span><br><span class="line"><span class="comment"> * internally represented in multiple ways. The &#x27;encoding&#x27; field of the object</span></span><br><span class="line"><span class="comment"> * is set to one of this fields for this object. */</span></span><br><span class="line"><span class="meta">#<span class="meta-keyword">define</span> OBJ_ENCODING_RAW 0     <span class="comment">/* Raw representation */</span></span></span><br><span class="line"><span class="meta">#<span class="meta-keyword">define</span> OBJ_ENCODING_INT 1     <span class="comment">/* Encoded as integer */</span></span></span><br><span class="line"><span class="meta">#<span class="meta-keyword">define</span> OBJ_ENCODING_HT 2      <span class="comment">/* Encoded as hash table */</span></span></span><br><span class="line"><span class="meta">#<span class="meta-keyword">define</span> OBJ_ENCODING_ZIPMAP 3  <span class="comment">/* Encoded as zipmap */</span></span></span><br><span class="line"><span class="meta">#<span class="meta-keyword">define</span> OBJ_ENCODING_LINKEDLIST 4 <span class="comment">/* No longer used: old list encoding. */</span></span></span><br><span class="line"><span class="meta">#<span class="meta-keyword">define</span> OBJ_ENCODING_ZIPLIST 5 <span class="comment">/* Encoded as ziplist */</span></span></span><br><span class="line"><span class="meta">#<span class="meta-keyword">define</span> OBJ_ENCODING_INTSET 6  <span class="comment">/* Encoded as intset */</span></span></span><br><span class="line"><span class="meta">#<span class="meta-keyword">define</span> OBJ_ENCODING_SKIPLIST 7  <span class="comment">/* Encoded as skiplist */</span></span></span><br><span class="line"><span class="meta">#<span class="meta-keyword">define</span> OBJ_ENCODING_EMBSTR 8  <span class="comment">/* Embedded sds string encoding */</span></span></span><br><span class="line"><span class="meta">#<span class="meta-keyword">define</span> OBJ_ENCODING_QUICKLIST 9 <span class="comment">/* Encoded as linked list of ziplists */</span></span></span><br><span class="line"><span class="meta">#<span class="meta-keyword">define</span> OBJ_ENCODING_STREAM 10 <span class="comment">/* Encoded as a radix tree of listpacks */</span></span></span><br></pre></td></tr></table></figure>
+<p>什么是编码？</p>
+<p>联想字符串的编码，一个字符串“你好”，对于我们人来说，看到的都是一样的，但是存储在机器上却不一定存储得一样。而<code>你好 -&gt; 机器上的byte</code>这个转换过程即为编码。</p>
+<p>我们往redis里面存储一个list，对于我们来说，它是个list，这个性质是不会变的，但是对于redis，这个list采用的存储方式可能是ziplist，也可能是linkedlist，这就是两种不同的编码方式。</p>
+<p>编码方式的对应关系如下：</p>
+<table>
+<thead>
+<tr>
+<th>类型</th>
+<th>可用编码方式</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>String</td>
+<td><code>raw, int, embstr</code></td>
+</tr>
+<tr>
+<td>List</td>
+<td><del><code>linkedlist</code></del>, quicklist</td>
+</tr>
+<tr>
+<td>Set</td>
+<td><code>intset, hashtable</code></td>
+</tr>
+<tr>
+<td>Sorted Set</td>
+<td><code>skip list, ziplist</code></td>
+</tr>
+<tr>
+<td>Hash</td>
+<td><code>hashtable, ziplist</code></td>
+</tr>
+<tr>
+<td></td>
+<td></td>
+</tr>
+</tbody></table>
+<p>这里需要提一下，redis是一个键值对数据库，那么怎么存储键值对这种关系呢？</p>
+<p>用的是hashtable。</p>
+<h4 id="lru"><a href="#lru" class="headerlink" title="lru"></a>lru</h4><p>lru即(<em>Least Recently Used</em>)，redis里面的lru算法可以用来提高效率。</p>
+<h4 id="refcount"><a href="#refcount" class="headerlink" title="refcount"></a>refcount</h4><p>用于引用技术，如果存储的两个对象是一模一样的，那么可能就只增加refcount，然后使两个的数据指针都指向同一个区域，而不是再存一份。</p>
+<h4 id="ptr"><a href="#ptr" class="headerlink" title="ptr"></a>ptr</h4><p>它指向的内存区域就是真正用来存储数的地方</p>
+
+    </div>
+
+    
+    
+    
+
+      <footer class="post-footer">
+          <div class="post-tags">
+              <a href="/oldblog/tags/redis/" rel="tag"># redis</a>
+              <a href="/oldblog/tags/%E6%BA%90%E7%A0%81/" rel="tag"># 源码</a>
+          </div>
+
+        
+
+
+        
+    <div class="post-nav">
+      <div class="post-nav-item">
+    <a href="/oldblog/2018/12/14/frp-%E6%A0%91%E8%8E%93%E6%B4%BE%E5%86%85%E7%BD%91%E7%A9%BF%E9%80%8F/" rel="prev" title="frp-树莓派内网穿透">
+      <i class="fa fa-chevron-left"></i> frp-树莓派内网穿透
+    </a></div>
+      <div class="post-nav-item">
+    <a href="/oldblog/2018/12/18/Redis-String%E7%B1%BB%E5%9E%8B/" rel="next" title="Redis-String类型">
+      Redis-String类型 <i class="fa fa-chevron-right"></i>
+    </a></div>
+    </div>
+      </footer>
+    
+  </article>
+  
+  
+  
+
+
+
+          </div>
+          
+
+<script>
+  window.addEventListener('tabs:register', () => {
+    let { activeClass } = CONFIG.comments;
+    if (CONFIG.comments.storage) {
+      activeClass = localStorage.getItem('comments_active') || activeClass;
+    }
+    if (activeClass) {
+      let activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
+      if (activeTab) {
+        activeTab.click();
+      }
+    }
+  });
+  if (CONFIG.comments.storage) {
+    window.addEventListener('tabs:click', event => {
+      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
+      let commentClass = event.target.classList[1];
+      localStorage.setItem('comments_active', commentClass);
+    });
+  }
+</script>
+
+        </div>
+          
+  
+  <div class="toggle sidebar-toggle">
+    <span class="toggle-line toggle-line-first"></span>
+    <span class="toggle-line toggle-line-middle"></span>
+    <span class="toggle-line toggle-line-last"></span>
+  </div>
+
+  <aside class="sidebar">
+    <div class="sidebar-inner">
+
+      <ul class="sidebar-nav motion-element">
+        <li class="sidebar-nav-toc">
+          文章目录
+        </li>
+        <li class="sidebar-nav-overview">
+          站点概览
+        </li>
+      </ul>
+
+      <!--noindex-->
+      <div class="post-toc-wrap sidebar-panel">
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-3"><a class="nav-link" href="#redisObject"><span class="nav-number">1.</span> <span class="nav-text">redisObject</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#type"><span class="nav-number">1.1.</span> <span class="nav-text">type</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#encoding"><span class="nav-number">1.2.</span> <span class="nav-text">encoding</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#lru"><span class="nav-number">1.3.</span> <span class="nav-text">lru</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#refcount"><span class="nav-number">1.4.</span> <span class="nav-text">refcount</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#ptr"><span class="nav-number">1.5.</span> <span class="nav-text">ptr</span></a></li></ol></li></ol></div>
+      </div>
+      <!--/noindex-->
+
+      <div class="site-overview-wrap sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+  <p class="site-author-name" itemprop="name">Charles</p>
+  <div class="site-description" itemprop="description">Be happy, please.</div>
+</div>
+<div class="site-state-wrap motion-element">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+          <a href="/oldblog/archives/">
+        
+          <span class="site-state-item-count">22</span>
+          <span class="site-state-item-name">日志</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-tags">
+            <a href="/oldblog/tags/">
+        <span class="site-state-item-count">14</span>
+        <span class="site-state-item-name">标签</span></a>
+      </div>
+  </nav>
+</div>
+
+
+
+      </div>
+
+    </div>
+  </aside>
+  <div id="sidebar-dimmer"></div>
+
+
+      </div>
+    </main>
+
+    <footer class="footer">
+      <div class="footer-inner">
+        
+
+        
+
+<div class="copyright">
+  
+  &copy; 
+  <span itemprop="copyrightYear">2021</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">Charles</span>
+</div>
+  <div class="powered-by">由 <a href="https://hexo.io/" class="theme-link" rel="noopener" target="_blank">Hexo</a> & <a href="https://pisces.theme-next.org/" class="theme-link" rel="noopener" target="_blank">NexT.Pisces</a> 强力驱动
+  </div>
+
+        
+
+
+
+
+
+
+
+
+      </div>
+    </footer>
+  </div>
+
+  
+  <script src="/oldblog/lib/anime.min.js"></script>
+  <script src="/oldblog/lib/velocity/velocity.min.js"></script>
+  <script src="/oldblog/lib/velocity/velocity.ui.min.js"></script>
+
+<script src="/oldblog/js/utils.js"></script>
+
+<script src="/oldblog/js/motion.js"></script>
+
+
+<script src="/oldblog/js/schemes/pisces.js"></script>
+
+
+<script src="/oldblog/js/next-boot.js"></script>
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  
+
+</body>
+</html>

@@ -1,0 +1,424 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 5.3.0">
+  <link rel="apple-touch-icon" sizes="180x180" href="/oldblog/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/oldblog/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/oldblog/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/oldblog/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/oldblog/css/main.css">
+
+
+<link rel="stylesheet" href="/oldblog/lib/font-awesome/css/all.min.css">
+
+<script id="hexo-configurations">
+    var NexT = window.NexT || {};
+    var CONFIG = {"hostname":"zhollow.github.io","root":"/oldblog/","scheme":"Pisces","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":false,"show_result":false,"style":null},"back2top":{"enable":true,"sidebar":false,"scrollpercent":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":false,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}}};
+  </script>
+
+  <meta name="description" content="编码存储list的编码只有一种quicklist（redis4.0），原来的linkedlist已经不用了。 虽然编码只有一种，但是除quicklist这个结构之外，还用到了ziplist。 quicklist以quicklist的编码方式存储list，存储结构是元素为ziplist的链表，而ziplist存储了一个或多个entry，entry里面即为存储的值。">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Redis-list类型">
+<meta property="og:url" content="http://zhollow.github.io/oldblog/2018/12/22/Redis-list%E7%B1%BB%E5%9E%8B/index.html">
+<meta property="og:site_name" content="Charles&#39; Blog">
+<meta property="og:description" content="编码存储list的编码只有一种quicklist（redis4.0），原来的linkedlist已经不用了。 虽然编码只有一种，但是除quicklist这个结构之外，还用到了ziplist。 quicklist以quicklist的编码方式存储list，存储结构是元素为ziplist的链表，而ziplist存储了一个或多个entry，entry里面即为存储的值。">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="http://zhollow.github.io/oldblog/images/redis-list-simple-demo.svg">
+<meta property="article:published_time" content="2018-12-22T01:21:19.000Z">
+<meta property="article:modified_time" content="2018-12-22T13:36:03.000Z">
+<meta property="article:author" content="Charles">
+<meta property="article:tag" content="redis">
+<meta property="article:tag" content="源码">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="http://zhollow.github.io/oldblog/images/redis-list-simple-demo.svg">
+
+<link rel="canonical" href="http://zhollow.github.io/oldblog/2018/12/22/Redis-list%E7%B1%BB%E5%9E%8B/">
+
+
+<script id="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome : false,
+    isPost : true,
+    lang   : 'zh-CN'
+  };
+</script>
+
+  <title>Redis-list类型 | Charles' Blog</title>
+  
+
+
+
+
+
+
+  <noscript>
+  <style>
+  .use-motion .brand,
+  .use-motion .menu-item,
+  .sidebar-inner,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header { opacity: initial; }
+
+  .use-motion .site-title,
+  .use-motion .site-subtitle {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line-before i { left: initial; }
+  .use-motion .logo-line-after i { right: initial; }
+  </style>
+</noscript>
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="container use-motion">
+    <div class="headband"></div>
+
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="切换导航栏">
+      <span class="toggle-line toggle-line-first"></span>
+      <span class="toggle-line toggle-line-middle"></span>
+      <span class="toggle-line toggle-line-last"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/oldblog/" class="brand" rel="start">
+      <span class="logo-line-before"><i></i></span>
+      <h1 class="site-title">Charles' Blog</h1>
+      <span class="logo-line-after"><i></i></span>
+    </a>
+      <p class="site-subtitle" itemprop="description">For better me.</p>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+    </div>
+  </div>
+</div>
+
+
+
+
+<nav class="site-nav">
+  <ul id="menu" class="main-menu menu">
+        <li class="menu-item menu-item-home">
+
+    <a href="/oldblog/" rel="section"><i class="fa fa-home fa-fw"></i>首页</a>
+
+  </li>
+        <li class="menu-item menu-item-archives">
+
+    <a href="/oldblog/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>归档</a>
+
+  </li>
+  </ul>
+</nav>
+
+
+
+
+</div>
+    </header>
+
+    
+  <div class="back-to-top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+
+
+    <main class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          
+
+          <div class="content post posts-expand">
+            
+
+    
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="http://zhollow.github.io/oldblog/2018/12/22/Redis-list%E7%B1%BB%E5%9E%8B/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/oldblog/images/avatar.gif">
+      <meta itemprop="name" content="Charles">
+      <meta itemprop="description" content="Be happy, please.">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Charles' Blog">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          Redis-list类型
+        </h1>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+              
+
+              <time title="创建时间：2018-12-22 09:21:19 / 修改时间：21:36:03" itemprop="dateCreated datePublished" datetime="2018-12-22T09:21:19+08:00">2018-12-22</time>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+        <h2 id="编码"><a href="#编码" class="headerlink" title="编码"></a>编码</h2><p>存储list的编码只有一种<code>quicklist</code>（redis4.0），原来的linkedlist已经不用了。</p>
+<p>虽然编码只有一种，但是除quicklist这个结构之外，还用到了ziplist。</p>
+<h3 id="quicklist"><a href="#quicklist" class="headerlink" title="quicklist"></a>quicklist</h3><p>以quicklist的编码方式存储list，存储结构是<strong>元素为ziplist的链表</strong>，而ziplist存储了一个或多个entry，entry里面即为存储的值。</p>
+<a id="more"></a>
+
+<p>简单的示意图如下：</p>
+<p><img src="/oldblog/images/redis-list-simple-demo.svg" alt="redis-list-simple-demo"></p>
+<p>ziplist和quicklistNode中均存储了对应单元内entry的数量，很方便range操作。</p>
+<p>同时，插入也非常便捷，只要往ziplist里面添加内容即可，如果ziplist放不下，插入一个quicklistNode再往其ziplist中填写即可。</p>
+<p>quicklist定义如下：</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">typedef</span> <span class="class"><span class="keyword">struct</span> <span class="title">quicklist</span> &#123;</span></span><br><span class="line">    quicklistNode *head;</span><br><span class="line">    quicklistNode *tail;</span><br><span class="line">    <span class="keyword">unsigned</span> <span class="keyword">long</span> count;        <span class="comment">/* total count of all entries in all ziplists */</span></span><br><span class="line">    <span class="keyword">unsigned</span> <span class="keyword">long</span> len;          <span class="comment">/* number of quicklistNodes */</span></span><br><span class="line">    <span class="keyword">int</span> fill : <span class="number">16</span>;              <span class="comment">/* fill factor for individual nodes */</span></span><br><span class="line">    <span class="keyword">unsigned</span> <span class="keyword">int</span> compress : <span class="number">16</span>; <span class="comment">/* depth of end nodes not to compress;0=off */</span></span><br><span class="line">&#125; quicklist;</span><br></pre></td></tr></table></figure>
+<p>quicklistNode结构：</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">typedef</span> <span class="class"><span class="keyword">struct</span> <span class="title">quicklistNode</span> &#123;</span></span><br><span class="line">    <span class="class"><span class="keyword">struct</span> <span class="title">quicklistNode</span> *<span class="title">prev</span>;</span></span><br><span class="line">    <span class="class"><span class="keyword">struct</span> <span class="title">quicklistNode</span> *<span class="title">next</span>;</span></span><br><span class="line">    <span class="keyword">unsigned</span> <span class="keyword">char</span> *zl;</span><br><span class="line">    <span class="keyword">unsigned</span> <span class="keyword">int</span> sz;             <span class="comment">/* ziplist size in bytes */</span></span><br><span class="line">    <span class="keyword">unsigned</span> <span class="keyword">int</span> count : <span class="number">16</span>;     <span class="comment">/* count of items in ziplist */</span></span><br><span class="line">    <span class="keyword">unsigned</span> <span class="keyword">int</span> encoding : <span class="number">2</span>;   <span class="comment">/* RAW==1 or LZF==2 */</span></span><br><span class="line">    <span class="keyword">unsigned</span> <span class="keyword">int</span> container : <span class="number">2</span>;  <span class="comment">/* NONE==1 or ZIPLIST==2 */</span></span><br><span class="line">    <span class="keyword">unsigned</span> <span class="keyword">int</span> recompress : <span class="number">1</span>; <span class="comment">/* was this node previous compressed? */</span></span><br><span class="line">    <span class="keyword">unsigned</span> <span class="keyword">int</span> attempted_compress : <span class="number">1</span>; <span class="comment">/* node can&#x27;t compress; too small */</span></span><br><span class="line">    <span class="keyword">unsigned</span> <span class="keyword">int</span> extra : <span class="number">10</span>; <span class="comment">/* more bits to steal for future usage */</span></span><br><span class="line">&#125; quicklistNode;</span><br></pre></td></tr></table></figure>
+<p>ziplist和sds一样，没有对应的结构体，结构注释如下：</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">/* &lt;zlbytes&gt; &lt;zltail&gt; &lt;zllen&gt; &lt;entry&gt; &lt;entry&gt; ... &lt;entry&gt; &lt;zlend&gt; */</span></span><br><span class="line"><span class="comment">/* ziplist    尾部偏移 entry数							1byte结束标志</span></span><br></pre></td></tr></table></figure>
+<p>顺便提一下，在写这篇文章的时候在quicklist.c中发现一个quicklistEntry的结构，不过文件中有一个注释</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">/* Node, quicklist, and Iterator are the only data structures used currently. */</span></span><br></pre></td></tr></table></figure>
+
+
+<h2 id="源码"><a href="#源码" class="headerlink" title="源码"></a>源码</h2><p>相关的结构已经在上面列出来了，下面分析一下lpush这个命令的执行过程，以<code>lpush names Taylor Ed Alan</code>为例。</p>
+<h3 id="lpush"><a href="#lpush" class="headerlink" title="lpush"></a>lpush</h3><p>和上次分析String一样，很容易地能在server.c中找到lpush命令对应的处理函数<code>lpushCommand</code>。</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// t_list.c</span></span><br><span class="line"><span class="function"><span class="keyword">void</span> <span class="title">lpushxCommand</span><span class="params">(client *c)</span> </span>&#123;</span><br><span class="line">    pushxGenericCommand(c,LIST_HEAD);</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">void</span> <span class="title">pushGenericCommand</span><span class="params">(client *c, <span class="keyword">int</span> where)</span> </span>&#123;</span><br><span class="line">    <span class="keyword">int</span> j, pushed = <span class="number">0</span>;</span><br><span class="line">    robj *lobj = lookupKeyWrite(c-&gt;db,c-&gt;argv[<span class="number">1</span>]);</span><br><span class="line"></span><br><span class="line">    <span class="keyword">if</span> (lobj &amp;&amp; lobj-&gt;type != OBJ_LIST) &#123;</span><br><span class="line">        addReply(c,shared.wrongtypeerr);</span><br><span class="line">        <span class="keyword">return</span>;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">for</span> (j = <span class="number">2</span>; j &lt; c-&gt;argc; j++) &#123;</span><br><span class="line">        <span class="keyword">if</span> (!lobj) &#123;</span><br><span class="line">            <span class="comment">// 如果之前不存在这个list，创建一个Quicklist</span></span><br><span class="line">            lobj = createQuicklistObject();		<span class="comment">//#关键点一</span></span><br><span class="line">            <span class="comment">// 这个函数设置了quicklist struct中的两个字段</span></span><br><span class="line">            quicklistSetOptions(lobj-&gt;ptr, server.list_max_ziplist_size,</span><br><span class="line">                                server.list_compress_depth);</span><br><span class="line">            dbAdd(c-&gt;db,c-&gt;argv[<span class="number">1</span>],lobj);</span><br><span class="line">        &#125;</span><br><span class="line">        <span class="comment">// 添加元素</span></span><br><span class="line">        listTypePush(lobj,c-&gt;argv[j],where);	<span class="comment">//#关键点二</span></span><br><span class="line">        pushed++;</span><br><span class="line">    &#125;</span><br><span class="line">    </span><br><span class="line">    <span class="comment">// 忽略一些代码...</span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<h4 id="关键点一–quicklist的创建"><a href="#关键点一–quicklist的创建" class="headerlink" title="关键点一–quicklist的创建"></a>关键点一–quicklist的创建</h4><p>在使用lpush命令的时候，如果之前不存在这样一个list，那么将会调用createQuicklistObject创建一个list。</p>
+<p>**Note:**从上面可以看出初始的list就是quicklist。</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// object.c</span></span><br><span class="line"><span class="function">robj *<span class="title">createQuicklistObject</span><span class="params">(<span class="keyword">void</span>)</span> </span>&#123;</span><br><span class="line">    quicklist *l = quicklistCreate();	<span class="comment">// 先创建一个quicklist</span></span><br><span class="line">    robj *o = createObject(OBJ_LIST,l);	<span class="comment">// 然后由这个quicklist创建robj对象</span></span><br><span class="line">    o-&gt;encoding = OBJ_ENCODING_QUICKLIST;</span><br><span class="line">    <span class="keyword">return</span> o;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="comment">// quicklist.c</span></span><br><span class="line"><span class="function">quicklist *<span class="title">quicklistCreate</span><span class="params">(<span class="keyword">void</span>)</span> </span>&#123;</span><br><span class="line">    <span class="class"><span class="keyword">struct</span> <span class="title">quicklist</span> *<span class="title">quicklist</span>;</span></span><br><span class="line"></span><br><span class="line">    quicklist = zmalloc(<span class="keyword">sizeof</span>(*quicklist));</span><br><span class="line">    quicklist-&gt;head = quicklist-&gt;tail = <span class="literal">NULL</span>;</span><br><span class="line">    quicklist-&gt;len = <span class="number">0</span>;</span><br><span class="line">    quicklist-&gt;count = <span class="number">0</span>;</span><br><span class="line">    quicklist-&gt;compress = <span class="number">0</span>;</span><br><span class="line">    quicklist-&gt;fill = <span class="number">-2</span>;</span><br><span class="line">    <span class="keyword">return</span> quicklist;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="comment">// object.c</span></span><br><span class="line"><span class="function">robj *<span class="title">createObject</span><span class="params">(<span class="keyword">int</span> type, <span class="keyword">void</span> *ptr)</span> </span>&#123;</span><br><span class="line">    robj *o = zmalloc(<span class="keyword">sizeof</span>(*o));</span><br><span class="line">    o-&gt;type = type;</span><br><span class="line">    o-&gt;encoding = OBJ_ENCODING_RAW;</span><br><span class="line">    o-&gt;ptr = ptr;</span><br><span class="line">    o-&gt;refcount = <span class="number">1</span>;</span><br><span class="line"></span><br><span class="line">    <span class="comment">/* Set the LRU to the current lruclock (minutes resolution), or</span></span><br><span class="line"><span class="comment">     * alternatively the LFU counter. */</span></span><br><span class="line">    <span class="keyword">if</span> (server.maxmemory_policy &amp; MAXMEMORY_FLAG_LFU) &#123;</span><br><span class="line">        o-&gt;lru = (LFUGetTimeInMinutes()&lt;&lt;<span class="number">8</span>) | LFU_INIT_VAL;</span><br><span class="line">    &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">        o-&gt;lru = LRU_CLOCK();</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">return</span> o;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<h4 id="关键点二–添加元素"><a href="#关键点二–添加元素" class="headerlink" title="关键点二–添加元素"></a>关键点二–添加元素</h4><p>添加元素的代码在listTypePush中：</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">void</span> <span class="title">listTypePush</span><span class="params">(robj *subject, robj *value, <span class="keyword">int</span> where)</span> </span>&#123;</span><br><span class="line">    <span class="keyword">if</span> (subject-&gt;encoding == OBJ_ENCODING_QUICKLIST) &#123;</span><br><span class="line">        <span class="keyword">int</span> pos = (where == LIST_HEAD) ? QUICKLIST_HEAD : QUICKLIST_TAIL;</span><br><span class="line">        value = getDecodedObject(value);</span><br><span class="line">        <span class="keyword">size_t</span> len = sdslen(value-&gt;ptr);</span><br><span class="line">        quicklistPush(subject-&gt;ptr, value-&gt;ptr, len, pos);</span><br><span class="line">        decrRefCount(value);</span><br><span class="line">    &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">        serverPanic(<span class="string">&quot;Unknown list encoding&quot;</span>);</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>quicklistPush：</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// quicklist.c</span></span><br><span class="line"><span class="function"><span class="keyword">void</span> <span class="title">quicklistPush</span><span class="params">(quicklist *quicklist, <span class="keyword">void</span> *value, <span class="keyword">const</span> <span class="keyword">size_t</span> sz,</span></span></span><br><span class="line"><span class="function"><span class="params">                   <span class="keyword">int</span> where)</span> </span>&#123;</span><br><span class="line">    <span class="keyword">if</span> (where == QUICKLIST_HEAD) &#123;</span><br><span class="line">        quicklistPushHead(quicklist, value, sz);</span><br><span class="line">    &#125; <span class="keyword">else</span> <span class="keyword">if</span> (where == QUICKLIST_TAIL) &#123;</span><br><span class="line">        quicklistPushTail(quicklist, value, sz);</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">int</span> <span class="title">quicklistPushHead</span><span class="params">(quicklist *quicklist, <span class="keyword">void</span> *value, <span class="keyword">size_t</span> sz)</span> </span>&#123;</span><br><span class="line">    quicklistNode *orig_head = quicklist-&gt;head;</span><br><span class="line">    <span class="comment">// 这个likely和可能会遇到的unlikely在阅读源码时可以忽略</span></span><br><span class="line">    <span class="comment">// 他们的作用是给编译器提示，使其合理安排分支的顺序</span></span><br><span class="line">    <span class="comment">// 利用cpu的分支预测功能来提高性能，具体的就不展开了</span></span><br><span class="line">    <span class="keyword">if</span> (likely(		</span><br><span class="line">            _quicklistNodeAllowInsert(quicklist-&gt;head, quicklist-&gt;fill, sz))) &#123;</span><br><span class="line">        <span class="comment">// 这个if分支是直接在ziplist中插入数据</span></span><br><span class="line">        quicklist-&gt;head-&gt;zl =</span><br><span class="line">            ziplistPush(quicklist-&gt;head-&gt;zl, value, sz, ZIPLIST_HEAD);</span><br><span class="line">        quicklistNodeUpdateSz(quicklist-&gt;head);</span><br><span class="line">    &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">        <span class="comment">// 这个else分支，先生成一个node，把node插入到list中，然后在node的ziplist中插入数据</span></span><br><span class="line">        quicklistNode *node = quicklistCreateNode();	<span class="comment">// 新增一个list执行这里</span></span><br><span class="line">        node-&gt;zl = ziplistPush(ziplistNew(), value, sz, ZIPLIST_HEAD);</span><br><span class="line"></span><br><span class="line">        quicklistNodeUpdateSz(node);</span><br><span class="line">        _quicklistInsertNodeBefore(quicklist, quicklist-&gt;head, node);</span><br><span class="line">    &#125;</span><br><span class="line">    quicklist-&gt;count++;</span><br><span class="line">    quicklist-&gt;head-&gt;count++;</span><br><span class="line">    <span class="keyword">return</span> (orig_head != quicklist-&gt;head);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<h4 id="关键点三–插入到ziplist还是新建node"><a href="#关键点三–插入到ziplist还是新建node" class="headerlink" title="关键点三–插入到ziplist还是新建node"></a>关键点三–插入到ziplist还是新建node</h4><p>上面在添加元素的时候，进行了一次判断，判断逻辑如下：</p>
+<p>插入新quicklistNode的情况：</p>
+<ul>
+<li>  传入的node为NULL时</li>
+<li>  数据插入到ziplist中后导致ziplist过大时</li>
+</ul>
+<p>判断代码在<code>_quicklistNodeAllowInsert</code>中。</p>
+
+    </div>
+
+    
+    
+    
+
+      <footer class="post-footer">
+          <div class="post-tags">
+              <a href="/oldblog/tags/redis/" rel="tag"># redis</a>
+              <a href="/oldblog/tags/%E6%BA%90%E7%A0%81/" rel="tag"># 源码</a>
+          </div>
+
+        
+
+
+        
+    <div class="post-nav">
+      <div class="post-nav-item">
+    <a href="/oldblog/2018/12/19/ubuntu-%E9%94%AE%E7%9B%98%E6%98%A0%E5%B0%84/" rel="prev" title="ubuntu-键盘映射">
+      <i class="fa fa-chevron-left"></i> ubuntu-键盘映射
+    </a></div>
+      <div class="post-nav-item">
+    <a href="/oldblog/2018/12/23/Redis-hash%E7%B1%BB%E5%9E%8B/" rel="next" title="Redis-hash类型">
+      Redis-hash类型 <i class="fa fa-chevron-right"></i>
+    </a></div>
+    </div>
+      </footer>
+    
+  </article>
+  
+  
+  
+
+
+
+          </div>
+          
+
+<script>
+  window.addEventListener('tabs:register', () => {
+    let { activeClass } = CONFIG.comments;
+    if (CONFIG.comments.storage) {
+      activeClass = localStorage.getItem('comments_active') || activeClass;
+    }
+    if (activeClass) {
+      let activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
+      if (activeTab) {
+        activeTab.click();
+      }
+    }
+  });
+  if (CONFIG.comments.storage) {
+    window.addEventListener('tabs:click', event => {
+      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
+      let commentClass = event.target.classList[1];
+      localStorage.setItem('comments_active', commentClass);
+    });
+  }
+</script>
+
+        </div>
+          
+  
+  <div class="toggle sidebar-toggle">
+    <span class="toggle-line toggle-line-first"></span>
+    <span class="toggle-line toggle-line-middle"></span>
+    <span class="toggle-line toggle-line-last"></span>
+  </div>
+
+  <aside class="sidebar">
+    <div class="sidebar-inner">
+
+      <ul class="sidebar-nav motion-element">
+        <li class="sidebar-nav-toc">
+          文章目录
+        </li>
+        <li class="sidebar-nav-overview">
+          站点概览
+        </li>
+      </ul>
+
+      <!--noindex-->
+      <div class="post-toc-wrap sidebar-panel">
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#%E7%BC%96%E7%A0%81"><span class="nav-number">1.</span> <span class="nav-text">编码</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#quicklist"><span class="nav-number">1.1.</span> <span class="nav-text">quicklist</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E6%BA%90%E7%A0%81"><span class="nav-number">2.</span> <span class="nav-text">源码</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#lpush"><span class="nav-number">2.1.</span> <span class="nav-text">lpush</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#%E5%85%B3%E9%94%AE%E7%82%B9%E4%B8%80%E2%80%93quicklist%E7%9A%84%E5%88%9B%E5%BB%BA"><span class="nav-number">2.1.1.</span> <span class="nav-text">关键点一–quicklist的创建</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#%E5%85%B3%E9%94%AE%E7%82%B9%E4%BA%8C%E2%80%93%E6%B7%BB%E5%8A%A0%E5%85%83%E7%B4%A0"><span class="nav-number">2.1.2.</span> <span class="nav-text">关键点二–添加元素</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#%E5%85%B3%E9%94%AE%E7%82%B9%E4%B8%89%E2%80%93%E6%8F%92%E5%85%A5%E5%88%B0ziplist%E8%BF%98%E6%98%AF%E6%96%B0%E5%BB%BAnode"><span class="nav-number">2.1.3.</span> <span class="nav-text">关键点三–插入到ziplist还是新建node</span></a></li></ol></li></ol></li></ol></div>
+      </div>
+      <!--/noindex-->
+
+      <div class="site-overview-wrap sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+  <p class="site-author-name" itemprop="name">Charles</p>
+  <div class="site-description" itemprop="description">Be happy, please.</div>
+</div>
+<div class="site-state-wrap motion-element">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+          <a href="/oldblog/archives/">
+        
+          <span class="site-state-item-count">22</span>
+          <span class="site-state-item-name">日志</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-tags">
+            <a href="/oldblog/tags/">
+        <span class="site-state-item-count">14</span>
+        <span class="site-state-item-name">标签</span></a>
+      </div>
+  </nav>
+</div>
+
+
+
+      </div>
+
+    </div>
+  </aside>
+  <div id="sidebar-dimmer"></div>
+
+
+      </div>
+    </main>
+
+    <footer class="footer">
+      <div class="footer-inner">
+        
+
+        
+
+<div class="copyright">
+  
+  &copy; 
+  <span itemprop="copyrightYear">2021</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">Charles</span>
+</div>
+  <div class="powered-by">由 <a href="https://hexo.io/" class="theme-link" rel="noopener" target="_blank">Hexo</a> & <a href="https://pisces.theme-next.org/" class="theme-link" rel="noopener" target="_blank">NexT.Pisces</a> 强力驱动
+  </div>
+
+        
+
+
+
+
+
+
+
+
+      </div>
+    </footer>
+  </div>
+
+  
+  <script src="/oldblog/lib/anime.min.js"></script>
+  <script src="/oldblog/lib/velocity/velocity.min.js"></script>
+  <script src="/oldblog/lib/velocity/velocity.ui.min.js"></script>
+
+<script src="/oldblog/js/utils.js"></script>
+
+<script src="/oldblog/js/motion.js"></script>
+
+
+<script src="/oldblog/js/schemes/pisces.js"></script>
+
+
+<script src="/oldblog/js/next-boot.js"></script>
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  
+
+</body>
+</html>

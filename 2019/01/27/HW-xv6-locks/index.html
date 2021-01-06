@@ -1,0 +1,422 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 5.3.0">
+  <link rel="apple-touch-icon" sizes="180x180" href="/oldblog/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/oldblog/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/oldblog/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/oldblog/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/oldblog/css/main.css">
+
+
+<link rel="stylesheet" href="/oldblog/lib/font-awesome/css/all.min.css">
+
+<script id="hexo-configurations">
+    var NexT = window.NexT || {};
+    var CONFIG = {"hostname":"zhollow.github.io","root":"/oldblog/","scheme":"Pisces","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":false,"show_result":false,"style":null},"back2top":{"enable":true,"sidebar":false,"scrollpercent":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":false,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}}};
+  </script>
+
+  <meta name="description" content="interrupts in ide.c在按照要求加上两行代码之后, 有一定的可能出现了panic, 我测试10次出现4次sched panic.  之后又试了几次, 发现还有acquire panic 为什么会panic?">
+<meta property="og:type" content="article">
+<meta property="og:title" content="HW xv6 locks">
+<meta property="og:url" content="http://zhollow.github.io/oldblog/2019/01/27/HW-xv6-locks/index.html">
+<meta property="og:site_name" content="Charles&#39; Blog">
+<meta property="og:description" content="interrupts in ide.c在按照要求加上两行代码之后, 有一定的可能出现了panic, 我测试10次出现4次sched panic.  之后又试了几次, 发现还有acquire panic 为什么会panic?">
+<meta property="og:locale" content="zh_CN">
+<meta property="article:published_time" content="2019-01-26T16:23:00.000Z">
+<meta property="article:modified_time" content="2019-01-26T16:26:05.000Z">
+<meta property="article:author" content="Charles">
+<meta property="article:tag" content="OS">
+<meta name="twitter:card" content="summary">
+
+<link rel="canonical" href="http://zhollow.github.io/oldblog/2019/01/27/HW-xv6-locks/">
+
+
+<script id="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome : false,
+    isPost : true,
+    lang   : 'zh-CN'
+  };
+</script>
+
+  <title>HW xv6 locks | Charles' Blog</title>
+  
+
+
+
+
+
+
+  <noscript>
+  <style>
+  .use-motion .brand,
+  .use-motion .menu-item,
+  .sidebar-inner,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header { opacity: initial; }
+
+  .use-motion .site-title,
+  .use-motion .site-subtitle {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line-before i { left: initial; }
+  .use-motion .logo-line-after i { right: initial; }
+  </style>
+</noscript>
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="container use-motion">
+    <div class="headband"></div>
+
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="切换导航栏">
+      <span class="toggle-line toggle-line-first"></span>
+      <span class="toggle-line toggle-line-middle"></span>
+      <span class="toggle-line toggle-line-last"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/oldblog/" class="brand" rel="start">
+      <span class="logo-line-before"><i></i></span>
+      <h1 class="site-title">Charles' Blog</h1>
+      <span class="logo-line-after"><i></i></span>
+    </a>
+      <p class="site-subtitle" itemprop="description">For better me.</p>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+    </div>
+  </div>
+</div>
+
+
+
+
+<nav class="site-nav">
+  <ul id="menu" class="main-menu menu">
+        <li class="menu-item menu-item-home">
+
+    <a href="/oldblog/" rel="section"><i class="fa fa-home fa-fw"></i>首页</a>
+
+  </li>
+        <li class="menu-item menu-item-archives">
+
+    <a href="/oldblog/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>归档</a>
+
+  </li>
+  </ul>
+</nav>
+
+
+
+
+</div>
+    </header>
+
+    
+  <div class="back-to-top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+
+
+    <main class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          
+
+          <div class="content post posts-expand">
+            
+
+    
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="http://zhollow.github.io/oldblog/2019/01/27/HW-xv6-locks/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/oldblog/images/avatar.gif">
+      <meta itemprop="name" content="Charles">
+      <meta itemprop="description" content="Be happy, please.">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Charles' Blog">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          HW xv6 locks
+        </h1>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+              
+
+              <time title="创建时间：2019-01-27 00:23:00 / 修改时间：00:26:05" itemprop="dateCreated datePublished" datetime="2019-01-27T00:23:00+08:00">2019-01-27</time>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+        <h3 id="interrupts-in-ide-c"><a href="#interrupts-in-ide-c" class="headerlink" title="interrupts in ide.c"></a>interrupts in ide.c</h3><p>在按照要求加上两行代码之后, 有一定的可能出现了panic, 我测试10次出现4次<br>sched panic. </p>
+<p>之后又试了几次, 发现还有acquire panic</p>
+<p>为什么会panic?</p>
+<a id="more"></a>
+
+<h4 id="panic-sched-locks"><a href="#panic-sched-locks" class="headerlink" title="panic: sched locks"></a>panic: sched locks</h4><p>先看sched panic出现的位置, 是在proc.c:378行</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">if</span>(mycpu()-&gt;ncli != <span class="number">1</span>)</span><br><span class="line">    panic(<span class="string">&quot;sched locks&quot;</span>);</span><br></pre></td></tr></table></figure>
+<p>说明是mycpu()-&gt;ncli不等于1导致的panic, 那么ncli是在哪里修改的呢?<br>经过grep之后, 发现ncli只有在pushcli/popcli中被修改了, 在pushcli中++, 在popcli中–.</p>
+<h4 id="分析"><a href="#分析" class="headerlink" title="分析"></a>分析</h4><p>查看stack trace 的eip发现调用过程是这样的:</p>
+<p>版本一:</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line">80103bc1: sched -&gt; panic</span><br><span class="line">80103d32: yield -&gt; sched</span><br><span class="line">80105933: trap  -&gt; yield</span><br><span class="line">8010576f: alltraps  -&gt; trap</span><br><span class="line">80100183: bread -&gt; iderw</span><br><span class="line">801013c5: readsb-&gt; bread</span><br><span class="line">801014bf: iinit -&gt; readsb</span><br><span class="line">801036c4: forkret   -&gt; iinit</span><br><span class="line">80105772: trapret   -&gt; popal</span><br></pre></td></tr></table></figure>
+<p>版本二:</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line">80103bc1: sched -&gt; panic</span><br><span class="line">80103d32: yield -&gt; sched</span><br><span class="line">80105933: trap  -&gt; yield</span><br><span class="line">8010576f: alltraps  -&gt; trap</span><br><span class="line">801021ba: bwrite    -&gt; idestart</span><br><span class="line">80102aa2: write_head    -&gt; bwrite</span><br><span class="line">80102b3e: recover_from_log  -&gt; write_head</span><br><span class="line">801036d0: forkret   -&gt; initlog</span><br><span class="line">80105772: trapret   -&gt; popal</span><br></pre></td></tr></table></figure>
+<p>版本三, 和版本一的稍微不同:</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line">80103bc1: sched -&gt; panic</span><br><span class="line">80103d32: yield -&gt; sched</span><br><span class="line">80105933: trap  -&gt; yield</span><br><span class="line">8010576f: alltraps  -&gt; trap</span><br><span class="line">**8010218e: iderw   -&gt; sleep**</span><br><span class="line">80100183: bread -&gt; iderw</span><br><span class="line">801013c5: readsb-&gt; bread</span><br><span class="line">801014bf: iinit -&gt; readsb</span><br><span class="line">801036c4: forkret   -&gt; iinit</span><br><span class="line">80105772: trapret   -&gt; popal</span><br></pre></td></tr></table></figure>
+<p>从上面三个版本中可以看出来, panic的出现都是由于陷入到了trap中, 在trap中调用了<br>yield, 查看trap.c中的代码, 当时钟tick信号到来的时候会调用yield, 而yield代码如下:</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">void</span></span><br><span class="line">yield(<span class="keyword">void</span>)</span><br><span class="line">&#123;</span><br><span class="line">  acquire(&amp;ptable.lock);  <span class="comment">//DOC: yieldlock</span></span><br><span class="line">  myproc()-&gt;state = RUNNABLE;</span><br><span class="line">  sched();</span><br><span class="line">  release(&amp;ptable.lock);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>看到这里应该就清楚了, 这三个panic的版本都是在调用iderw, acquire之后, release之前, 被时钟tick中断, 然后进入到了yield中, 又依次acquire, 此时<code>mycpu()-&gt;ncli == 2</code>,然后调用sched, (<strong>bang!</strong>)panic.</p>
+<h4 id="panic-acquire"><a href="#panic-acquire" class="headerlink" title="panic: acquire"></a>panic: acquire</h4><p>再看acquire panic的位置, 在spinlock.c:126</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">if</span>(holding(lk))</span><br><span class="line">  panic(<span class="string">&quot;acquire&quot;</span>);</span><br></pre></td></tr></table></figure>
+<p>当一个proc重复获取锁的时候会触发这个panic</p>
+<h4 id="分析-1"><a href="#分析-1" class="headerlink" title="分析"></a>分析</h4><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line">panic: acquire</span><br><span class="line">801043fd: acquire   -&gt; panic</span><br><span class="line">80102063: ideintr   -&gt; acquire</span><br><span class="line">80105995: trap  -&gt; ideintr</span><br><span class="line">8010576f: alltrap   -&gt; trap</span><br><span class="line">80100183: bread -&gt; iderw</span><br><span class="line">801019cf: readi -&gt; bread</span><br><span class="line">80106c96: loaduvm   -&gt; readi</span><br><span class="line">80100b3f: exec  -&gt; loaduvm</span><br><span class="line">801054e0: sys_exec  -&gt; exec</span><br><span class="line">80104927: syscall   -&gt; sys_exec</span><br></pre></td></tr></table></figure>
+<p>其实从上面的的trace就能看出了, 先调用了iderw, 然后又调用了ideintr, 这两个都调用<br>了acquire, 而且是对于同一个锁, ideintr代码如下:</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">void</span></span><br><span class="line">ideintr(<span class="keyword">void</span>)</span><br><span class="line">&#123;</span><br><span class="line">  <span class="class"><span class="keyword">struct</span> <span class="title">buf</span> *<span class="title">b</span>;</span></span><br><span class="line"></span><br><span class="line">  <span class="comment">// First queued buffer is the active request.</span></span><br><span class="line">  acquire(&amp;idelock);</span><br><span class="line"></span><br><span class="line">  <span class="comment">//...</span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<h3 id="Interrupts-in-file-c"><a href="#Interrupts-in-file-c" class="headerlink" title="Interrupts in file.c"></a>Interrupts in file.c</h3><p>按照上面说的加上sti和cli, 我竟然发现了panic…</p>
+<p>同样是panic: sched locks</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line">80103bc1: sched -&gt; panic</span><br><span class="line">80103d32: yield -&gt; sched</span><br><span class="line">80105933: trap  -&gt; yield</span><br><span class="line">8010576f: alltraps  -&gt; trap</span><br><span class="line">8010518b: sys_open  -&gt; filealloc</span><br><span class="line">80104927: syscall   -&gt; sys_open</span><br><span class="line">80105aa9: trap  -&gt; syscall</span><br><span class="line">8010576f: trapall   -&gt; trap</span><br></pre></td></tr></table></figure>
+<p>原因和上面分析的一样, 在filealloc调用acquire之后开中断, 接收到时钟tick的中断,<br>跑去执行trap了, 然后是yield, acquire, sched, panic!</p>
+<p>教程上说出panic的可能很小啊.</p>
+<blockquote>
+<p>On qemu there is a small chance that the kernel will panic with the extra sti() in filealloc().</p>
+</blockquote>
+<p>这里我怀疑是我之前哪个作业做错了还是怎么招, 我认为这个chance应该不小啊, 毕竟时钟<br>tick可是1s好几个G那么多次, 如果真是错了我会回来改的, 有人发现了也提醒我一下吧.</p>
+<p>不过这次只有这一个panic, 而且和filealloc没有什么关系, 不像上面的, acquire的panic<br>是因为在中断处理中又获取同一个锁.</p>
+<p>所以kernel没有panic的原因(强行解释), 没有在中断处理程序中再次使用到共享的数据,<br>故没有panic.</p>
+<h3 id="xv6-lock-implementation"><a href="#xv6-lock-implementation" class="headerlink" title="xv6 lock implementation"></a>xv6 lock implementation</h3><p>看下实现:</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">void</span></span><br><span class="line">release(struct spinlock *lk)</span><br><span class="line">&#123;</span><br><span class="line">  <span class="keyword">if</span>(!holding(lk))</span><br><span class="line">    panic(<span class="string">&quot;release&quot;</span>);</span><br><span class="line"></span><br><span class="line">  lk-&gt;pcs[<span class="number">0</span>] = <span class="number">0</span>;   <span class="comment">// 为什么这两行在clear lk-&gt;locked之前</span></span><br><span class="line">  lk-&gt;cpu = <span class="number">0</span>;</span><br><span class="line"></span><br><span class="line">  __sync_synchronize();</span><br><span class="line"></span><br><span class="line">  <span class="function"><span class="keyword">asm</span> <span class="title">volatile</span><span class="params">(<span class="string">&quot;movl $0, %0&quot;</span> : <span class="string">&quot;+m&quot;</span> (lk-&gt;locked) : )</span></span>;</span><br><span class="line"></span><br><span class="line">  popcli();</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>如果清零在前, 可能会出现下面的情况:</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line">|      CPU1           CPU2                    </span><br><span class="line">|                                             </span><br><span class="line">|  lk-&gt;locked&#x3D;0                               </span><br><span class="line">|                                             </span><br><span class="line">|                   获取锁, 设置lk-&gt;   pcs, lk-&gt;cpu</span><br><span class="line">|  lk-&gt;pcs[0]&#x3D;0                               </span><br><span class="line">|  lk-&gt;cpu&#x3D;0                                  </span><br><span class="line">v                                             </span><br></pre></td></tr></table></figure>
+    </div>
+
+    
+    
+    
+
+      <footer class="post-footer">
+          <div class="post-tags">
+              <a href="/oldblog/tags/OS/" rel="tag"># OS</a>
+          </div>
+
+        
+
+
+        
+    <div class="post-nav">
+      <div class="post-nav-item">
+    <a href="/oldblog/2019/01/18/Spring-boot%E8%AF%BB%E5%8F%96properties-yaml%E9%85%8D%E7%BD%AE%E6%96%87%E4%BB%B6/" rel="prev" title="Spring-boot读取properties/yaml配置文件">
+      <i class="fa fa-chevron-left"></i> Spring-boot读取properties/yaml配置文件
+    </a></div>
+      <div class="post-nav-item">
+    <a href="/oldblog/2019/02/02/6-828-Lab4/" rel="next" title="6.828-Lab4">
+      6.828-Lab4 <i class="fa fa-chevron-right"></i>
+    </a></div>
+    </div>
+      </footer>
+    
+  </article>
+  
+  
+  
+
+
+
+          </div>
+          
+
+<script>
+  window.addEventListener('tabs:register', () => {
+    let { activeClass } = CONFIG.comments;
+    if (CONFIG.comments.storage) {
+      activeClass = localStorage.getItem('comments_active') || activeClass;
+    }
+    if (activeClass) {
+      let activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
+      if (activeTab) {
+        activeTab.click();
+      }
+    }
+  });
+  if (CONFIG.comments.storage) {
+    window.addEventListener('tabs:click', event => {
+      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
+      let commentClass = event.target.classList[1];
+      localStorage.setItem('comments_active', commentClass);
+    });
+  }
+</script>
+
+        </div>
+          
+  
+  <div class="toggle sidebar-toggle">
+    <span class="toggle-line toggle-line-first"></span>
+    <span class="toggle-line toggle-line-middle"></span>
+    <span class="toggle-line toggle-line-last"></span>
+  </div>
+
+  <aside class="sidebar">
+    <div class="sidebar-inner">
+
+      <ul class="sidebar-nav motion-element">
+        <li class="sidebar-nav-toc">
+          文章目录
+        </li>
+        <li class="sidebar-nav-overview">
+          站点概览
+        </li>
+      </ul>
+
+      <!--noindex-->
+      <div class="post-toc-wrap sidebar-panel">
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-3"><a class="nav-link" href="#interrupts-in-ide-c"><span class="nav-number">1.</span> <span class="nav-text">interrupts in ide.c</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#panic-sched-locks"><span class="nav-number">1.1.</span> <span class="nav-text">panic: sched locks</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#%E5%88%86%E6%9E%90"><span class="nav-number">1.2.</span> <span class="nav-text">分析</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#panic-acquire"><span class="nav-number">1.3.</span> <span class="nav-text">panic: acquire</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#%E5%88%86%E6%9E%90-1"><span class="nav-number">1.4.</span> <span class="nav-text">分析</span></a></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Interrupts-in-file-c"><span class="nav-number">2.</span> <span class="nav-text">Interrupts in file.c</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#xv6-lock-implementation"><span class="nav-number">3.</span> <span class="nav-text">xv6 lock implementation</span></a></li></ol></div>
+      </div>
+      <!--/noindex-->
+
+      <div class="site-overview-wrap sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+  <p class="site-author-name" itemprop="name">Charles</p>
+  <div class="site-description" itemprop="description">Be happy, please.</div>
+</div>
+<div class="site-state-wrap motion-element">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+          <a href="/oldblog/archives/">
+        
+          <span class="site-state-item-count">22</span>
+          <span class="site-state-item-name">日志</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-tags">
+            <a href="/oldblog/tags/">
+        <span class="site-state-item-count">14</span>
+        <span class="site-state-item-name">标签</span></a>
+      </div>
+  </nav>
+</div>
+
+
+
+      </div>
+
+    </div>
+  </aside>
+  <div id="sidebar-dimmer"></div>
+
+
+      </div>
+    </main>
+
+    <footer class="footer">
+      <div class="footer-inner">
+        
+
+        
+
+<div class="copyright">
+  
+  &copy; 
+  <span itemprop="copyrightYear">2021</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">Charles</span>
+</div>
+  <div class="powered-by">由 <a href="https://hexo.io/" class="theme-link" rel="noopener" target="_blank">Hexo</a> & <a href="https://pisces.theme-next.org/" class="theme-link" rel="noopener" target="_blank">NexT.Pisces</a> 强力驱动
+  </div>
+
+        
+
+
+
+
+
+
+
+
+      </div>
+    </footer>
+  </div>
+
+  
+  <script src="/oldblog/lib/anime.min.js"></script>
+  <script src="/oldblog/lib/velocity/velocity.min.js"></script>
+  <script src="/oldblog/lib/velocity/velocity.ui.min.js"></script>
+
+<script src="/oldblog/js/utils.js"></script>
+
+<script src="/oldblog/js/motion.js"></script>
+
+
+<script src="/oldblog/js/schemes/pisces.js"></script>
+
+
+<script src="/oldblog/js/next-boot.js"></script>
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  
+
+</body>
+</html>

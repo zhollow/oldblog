@@ -1,0 +1,436 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 5.3.0">
+  <link rel="apple-touch-icon" sizes="180x180" href="/oldblog/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/oldblog/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/oldblog/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/oldblog/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/oldblog/css/main.css">
+
+
+<link rel="stylesheet" href="/oldblog/lib/font-awesome/css/all.min.css">
+
+<script id="hexo-configurations">
+    var NexT = window.NexT || {};
+    var CONFIG = {"hostname":"zhollow.github.io","root":"/oldblog/","scheme":"Pisces","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":false,"show_result":false,"style":null},"back2top":{"enable":true,"sidebar":false,"scrollpercent":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":false,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}}};
+  </script>
+
+  <meta name="description" content="网易云音乐是个好地方，里面各个都是人才，特别是评论区…… 所以我就想把评论爬下来看看，下面记录一下分析api的过程与结果。 过程大概如下：    定位到获取评论的请求   分析评论请求方式   用python获取评论">
+<meta property="og:type" content="article">
+<meta property="og:title" content="网易云评论api分析">
+<meta property="og:url" content="http://zhollow.github.io/oldblog/2018/12/24/%E7%BD%91%E6%98%93%E4%BA%91%E8%AF%84%E8%AE%BAapi%E5%88%86%E6%9E%90/index.html">
+<meta property="og:site_name" content="Charles&#39; Blog">
+<meta property="og:description" content="网易云音乐是个好地方，里面各个都是人才，特别是评论区…… 所以我就想把评论爬下来看看，下面记录一下分析api的过程与结果。 过程大概如下：    定位到获取评论的请求   分析评论请求方式   用python获取评论">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="http://zhollow.github.io/oldblog/images/netease-comment-requests.png">
+<meta property="og:image" content="http://zhollow.github.io/oldblog/images/netease-comment-post-data.png">
+<meta property="og:image" content="http://zhollow.github.io/oldblog/images/netease-comment-encSecKey.png">
+<meta property="article:published_time" content="2018-12-24T12:54:46.000Z">
+<meta property="article:modified_time" content="2018-12-31T06:15:03.000Z">
+<meta property="article:author" content="Charles">
+<meta property="article:tag" content="python">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="http://zhollow.github.io/oldblog/images/netease-comment-requests.png">
+
+<link rel="canonical" href="http://zhollow.github.io/oldblog/2018/12/24/%E7%BD%91%E6%98%93%E4%BA%91%E8%AF%84%E8%AE%BAapi%E5%88%86%E6%9E%90/">
+
+
+<script id="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome : false,
+    isPost : true,
+    lang   : 'zh-CN'
+  };
+</script>
+
+  <title>网易云评论api分析 | Charles' Blog</title>
+  
+
+
+
+
+
+
+  <noscript>
+  <style>
+  .use-motion .brand,
+  .use-motion .menu-item,
+  .sidebar-inner,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header { opacity: initial; }
+
+  .use-motion .site-title,
+  .use-motion .site-subtitle {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line-before i { left: initial; }
+  .use-motion .logo-line-after i { right: initial; }
+  </style>
+</noscript>
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="container use-motion">
+    <div class="headband"></div>
+
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="切换导航栏">
+      <span class="toggle-line toggle-line-first"></span>
+      <span class="toggle-line toggle-line-middle"></span>
+      <span class="toggle-line toggle-line-last"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/oldblog/" class="brand" rel="start">
+      <span class="logo-line-before"><i></i></span>
+      <h1 class="site-title">Charles' Blog</h1>
+      <span class="logo-line-after"><i></i></span>
+    </a>
+      <p class="site-subtitle" itemprop="description">For better me.</p>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+    </div>
+  </div>
+</div>
+
+
+
+
+<nav class="site-nav">
+  <ul id="menu" class="main-menu menu">
+        <li class="menu-item menu-item-home">
+
+    <a href="/oldblog/" rel="section"><i class="fa fa-home fa-fw"></i>首页</a>
+
+  </li>
+        <li class="menu-item menu-item-archives">
+
+    <a href="/oldblog/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>归档</a>
+
+  </li>
+  </ul>
+</nav>
+
+
+
+
+</div>
+    </header>
+
+    
+  <div class="back-to-top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+
+
+    <main class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          
+
+          <div class="content post posts-expand">
+            
+
+    
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="http://zhollow.github.io/oldblog/2018/12/24/%E7%BD%91%E6%98%93%E4%BA%91%E8%AF%84%E8%AE%BAapi%E5%88%86%E6%9E%90/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/oldblog/images/avatar.gif">
+      <meta itemprop="name" content="Charles">
+      <meta itemprop="description" content="Be happy, please.">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Charles' Blog">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          网易云评论api分析
+        </h1>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+
+              <time title="创建时间：2018-12-24 20:54:46" itemprop="dateCreated datePublished" datetime="2018-12-24T20:54:46+08:00">2018-12-24</time>
+            </span>
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="far fa-calendar-check"></i>
+                </span>
+                <span class="post-meta-item-text">更新于</span>
+                <time title="修改时间：2018-12-31 14:15:03" itemprop="dateModified" datetime="2018-12-31T14:15:03+08:00">2018-12-31</time>
+              </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+        <p>网易云音乐是个好地方，里面各个都是人才，特别是评论区……</p>
+<p>所以我就想把评论爬下来看看，下面记录一下分析api的过程与结果。</p>
+<p>过程大概如下：</p>
+<ul>
+<li>  定位到获取评论的请求</li>
+<li>  分析评论请求方式</li>
+<li>  用python获取评论</li>
+</ul>
+<a id="more"></a>
+
+
+<h3 id="定位评论请求"><a href="#定位评论请求" class="headerlink" title="定位评论请求"></a>定位评论请求</h3><p>废话少说，F12，在网页中随便找一首歌，url形如: <code>https://music.163.com/#/song?id=28828076</code>，抓包。</p>
+<p>待页面加载完成之后，随便找条评论搜索，定位到获取评论的那条请求，如下图：</p>
+<p><img src="/oldblog/images/netease-comment-requests.png" alt="netease-comment-requests"></p>
+<p>可以看到这条请求是发向<code>https://music.163.com/weapi/v1/resource/comments/R_SO_4_28828076?csrf_token=</code>的，而其中的<code>R_SO_4_</code>后面其实就是歌曲的id。</p>
+<h3 id="分析请求"><a href="#分析请求" class="headerlink" title="分析请求"></a>分析请求</h3><p>请求中发送的数据如下图，看一眼，啥都看不懂，肯定是加密过了。</p>
+<p><img src="/oldblog/images/netease-comment-post-data.png" alt="发送的数据"></p>
+<p>从表单中的名称猜测出一个是加密后的内容，另一个是加密密钥。</p>
+<p>下面要找到在哪里加密的信息，然后进一步找到加密方法，这样我们就可以用爬虫来模拟了。</p>
+<h4 id="在哪加密"><a href="#在哪加密" class="headerlink" title="在哪加密"></a>在哪加密</h4><p>同样，在network tab下面搜索<code>encSecKey</code>，搜到了一个js文件中的两个函数都有<code>encSecKey</code>。</p>
+<p><img src="/oldblog/images/netease-comment-encSecKey.png" alt="encSecKey"></p>
+<p>下面列出这两个函数：</p>
+<p><strong>函数一</strong></p>
+<figure class="highlight js"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br></pre></td><td class="code"><pre><span class="line">! <span class="function"><span class="keyword">function</span>(<span class="params"></span>) </span>&#123;</span><br><span class="line">    <span class="function"><span class="keyword">function</span> <span class="title">a</span>(<span class="params">a</span>) </span>&#123;</span><br><span class="line">        <span class="comment">// 获取随机串</span></span><br><span class="line">        <span class="keyword">var</span> d, e, b = <span class="string">&quot;abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789&quot;</span>,</span><br><span class="line">            c = <span class="string">&quot;&quot;</span>;</span><br><span class="line">        <span class="keyword">for</span> (d = <span class="number">0</span>; a &gt; d; d += <span class="number">1</span>) e = <span class="built_in">Math</span>.random() * b.length, e = <span class="built_in">Math</span>.floor(e), c += b.charAt(e);</span><br><span class="line">        <span class="keyword">return</span> c</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="comment">// a是待加密数据，b是passphrase</span></span><br><span class="line">    <span class="function"><span class="keyword">function</span> <span class="title">b</span>(<span class="params">a, b</span>) </span>&#123;</span><br><span class="line">        <span class="keyword">var</span> c = CryptoJS.enc.Utf8.parse(b),</span><br><span class="line">            d = CryptoJS.enc.Utf8.parse(<span class="string">&quot;0102030405060708&quot;</span>),</span><br><span class="line">            e = CryptoJS.enc.Utf8.parse(a),</span><br><span class="line">            <span class="comment">// 使用AES加密</span></span><br><span class="line">            <span class="comment">// e是待加密信息</span></span><br><span class="line">            <span class="comment">// c是passphrase</span></span><br><span class="line">            <span class="comment">// d是nonce</span></span><br><span class="line">            f = CryptoJS.AES.encrypt(e, c, &#123;</span><br><span class="line">                iv: d,</span><br><span class="line">                mode: CryptoJS.mode.CBC</span><br><span class="line">            &#125;);</span><br><span class="line">        <span class="keyword">return</span> f.toString()</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="comment">// 生成RSA密钥对</span></span><br><span class="line">    <span class="function"><span class="keyword">function</span> <span class="title">c</span>(<span class="params">a, b, c</span>) </span>&#123;</span><br><span class="line">        <span class="keyword">var</span> d, e;</span><br><span class="line">        <span class="keyword">return</span> setMaxDigits(<span class="number">131</span>), d = <span class="keyword">new</span> RSAKeyPair(b, <span class="string">&quot;&quot;</span>, c), e = encryptedString(d, a)</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">function</span> <span class="title">d</span>(<span class="params">d, e, f, g</span>) </span>&#123;</span><br><span class="line">        <span class="comment">// d是表单数据</span></span><br><span class="line">        <span class="comment">// e和g是常数</span></span><br><span class="line">        <span class="comment">// 经过分析e: 010001</span></span><br><span class="line">        <span class="comment">//		  g: 0CoJUm6Qyw8W8jud</span></span><br><span class="line">        </span><br><span class="line">        <span class="keyword">var</span> h = &#123;&#125;,</span><br><span class="line">            i = a(<span class="number">16</span>);	<span class="comment">// 长度为16的随机串</span></span><br><span class="line">        </span><br><span class="line">        <span class="comment">// 上面的b函数是用于AES加密，这里调用b进行了两次AES加密</span></span><br><span class="line">        <span class="comment">// 使用</span></span><br><span class="line">        <span class="keyword">return</span> h.encText = b(d, g), h.encText = b(h.encText, i), h.encSecKey = c(i, e, f), h</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">function</span> <span class="title">e</span>(<span class="params">a, b, d, e</span>) </span>&#123;</span><br><span class="line">        <span class="keyword">var</span> f = &#123;&#125;;</span><br><span class="line">        <span class="keyword">return</span> f.encText = c(a + e, b, d), f</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="built_in">window</span>.asrsea = d, <span class="built_in">window</span>.ecnonasr = e</span><br><span class="line">&#125;();</span><br></pre></td></tr></table></figure>
+<p><strong>函数二</strong></p>
+<figure class="highlight js"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br></pre></td><td class="code"><pre><span class="line">(<span class="function"><span class="keyword">function</span>(<span class="params"></span>) </span>&#123;</span><br><span class="line">    <span class="keyword">var</span> c9h = NEJ.P,</span><br><span class="line">        et2x = c9h(<span class="string">&quot;nej.g&quot;</span>),</span><br><span class="line">        v9m = c9h(<span class="string">&quot;nej.j&quot;</span>),</span><br><span class="line">        k9b = c9h(<span class="string">&quot;nej.u&quot;</span>),</span><br><span class="line">        Xw8o = c9h(<span class="string">&quot;nm.x.ek&quot;</span>),</span><br><span class="line">        l9c = c9h(<span class="string">&quot;nm.x&quot;</span>);</span><br><span class="line">    <span class="keyword">if</span> (v9m.bl9c.redefine) <span class="keyword">return</span>;</span><br><span class="line">    <span class="built_in">window</span>.GEnc = <span class="literal">true</span>;</span><br><span class="line">    <span class="keyword">var</span> brK4O = <span class="function"><span class="keyword">function</span>(<span class="params">cxx0x</span>) </span>&#123;</span><br><span class="line">        <span class="keyword">var</span> m9d = [];</span><br><span class="line">        k9b.be9V(cxx0x, <span class="function"><span class="keyword">function</span>(<span class="params">cxv0x</span>) </span>&#123;</span><br><span class="line">            m9d.push(Xw8o.emj[cxv0x])</span><br><span class="line">        &#125;);</span><br><span class="line">        <span class="keyword">return</span> m9d.join(<span class="string">&quot;&quot;</span>)</span><br><span class="line">    &#125;;</span><br><span class="line">    <span class="keyword">var</span> cxt0x = v9m.bl9c;</span><br><span class="line">    v9m.bl9c = <span class="function"><span class="keyword">function</span>(<span class="params">Y9P, e9f</span>) </span>&#123;</span><br><span class="line">        <span class="keyword">var</span> i9b = &#123;&#125;,</span><br><span class="line">            e9f = NEJ.X(&#123;&#125;, e9f),</span><br><span class="line">            mt4x = Y9P.indexOf(<span class="string">&quot;?&quot;</span>);</span><br><span class="line">        <span class="keyword">if</span> (<span class="built_in">window</span>.GEnc &amp;&amp; <span class="regexp">/(^|\.com)\/api/</span>.test(Y9P) &amp;&amp; !(e9f.headers &amp;&amp; e9f.headers[et2x.Cf0x] == et2x.Gl1x) &amp;&amp; !e9f.noEnc) &#123;</span><br><span class="line">            <span class="keyword">if</span> (mt4x != -<span class="number">1</span>) &#123;</span><br><span class="line">                i9b = k9b.hb3x(Y9P.substring(mt4x + <span class="number">1</span>));</span><br><span class="line">                Y9P = Y9P.substring(<span class="number">0</span>, mt4x)</span><br><span class="line">            &#125;</span><br><span class="line">            <span class="keyword">if</span> (e9f.query) &#123;</span><br><span class="line">                i9b = NEJ.X(i9b, k9b.fP2x(e9f.query) ? k9b.hb3x(e9f.query) : e9f.query)</span><br><span class="line">            &#125;</span><br><span class="line">            <span class="keyword">if</span> (e9f.data) &#123;</span><br><span class="line">                i9b = NEJ.X(i9b, k9b.fP2x(e9f.data) ? k9b.hb3x(e9f.data) : e9f.data)</span><br><span class="line">            &#125;</span><br><span class="line">            i9b[<span class="string">&quot;csrf_token&quot;</span>] = v9m.gO3x(<span class="string">&quot;__csrf&quot;</span>);</span><br><span class="line">            Y9P = Y9P.replace(<span class="string">&quot;api&quot;</span>, <span class="string">&quot;weapi&quot;</span>);</span><br><span class="line">            e9f.method = <span class="string">&quot;post&quot;</span>;</span><br><span class="line">            <span class="keyword">delete</span> e9f.query;</span><br><span class="line">            <span class="keyword">var</span> bVs3x = <span class="built_in">window</span>.asrsea(<span class="built_in">JSON</span>.stringify(i9b), brK4O([<span class="string">&quot;流泪&quot;</span>, <span class="string">&quot;强&quot;</span>]), brK4O(Xw8o.md), brK4O([<span class="string">&quot;爱心&quot;</span>, <span class="string">&quot;女孩&quot;</span>, <span class="string">&quot;惊恐&quot;</span>, <span class="string">&quot;大笑&quot;</span>]));</span><br><span class="line">            e9f.data = k9b.cB0x(&#123;</span><br><span class="line">                params: bVs3x.encText,</span><br><span class="line">                encSecKey: bVs3x.encSecKey</span><br><span class="line">            &#125;)</span><br><span class="line">        &#125;</span><br><span class="line">        cxt0x(Y9P, e9f)</span><br><span class="line">    &#125;;</span><br><span class="line">    v9m.bl9c.redefine = <span class="literal">true</span></span><br><span class="line">&#125;)();</span><br></pre></td></tr></table></figure>
+<p>函数二调用了<code>window.asrsea</code>，而<code>window.asrsea</code>又在函数一中被赋值为<code>d</code>。</p>
+<h4 id="加密参数"><a href="#加密参数" class="headerlink" title="加密参数"></a>加密参数</h4><p>在<code>window.asrsea</code>的参数表中，发现有两个硬编码的列表经过某个函数转换后传入到<code>window.asrsea</code>，也就是传入到<code>d</code>中，在<code>d</code>打下断点，发现经过转换后的传入到<code>d</code>中的参数如下：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">d: &quot;&#123;&quot;ids&quot;:&quot;[5113327]&quot;,&quot;br&quot;:128000,&quot;csrf_token&quot;:&quot;&quot;&#125;&quot;</span><br><span class="line">e: &quot;010001&quot;</span><br><span class="line">f: &quot;00e0b509f6259df8642dbc35662901477df22677ec152b5ff68ace615bb7b725152b3ab17a876aea8a5aa76d2e417629ec4ee341f56135fccf695280104e0312ecbda92557c93870114af6c9d05c4f7f0c3685b7a46bee255932575cce10b424d813cfe4875d3e82047b97ddef52741d546b8e289dc6935b3ece0462db0a22b8e7&quot;</span><br><span class="line">g: &quot;0CoJUm6Qyw8W8jud&quot;</span><br></pre></td></tr></table></figure>
+<p>现在两个常数<code>e,g</code>都已经确定了，经过多次断点，发现<code>f</code>竟然也是常数。</p>
+<p>那么现在传入加密函数<code>d</code>中的所有参数都已经确定了，接下来要分析出来怎么用这些参数加密数据，然后发送到服务器。</p>
+<h4 id="加密策略"><a href="#加密策略" class="headerlink" title="加密策略"></a>加密策略</h4><p>加密策略是使用AES加密请求数据，然后用RSA加密AES密钥，我尝试分析了一下，发现分析得头皮发麻，后面在github找到了。。。。。链接在这：<a target="_blank" rel="noopener" href="https://github.com/darknessomi/musicbox/wiki/%E7%BD%91%E6%98%93%E4%BA%91%E9%9F%B3%E4%B9%90%E6%96%B0%E7%89%88WebAPI%E5%88%86%E6%9E%90%E3%80%82">网易云新版webapi分析</a></p>
+<h3 id="代码"><a href="#代码" class="headerlink" title="代码"></a>代码</h3><p>代码是python2写的，改了一下，python3能用：</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br><span class="line">80</span><br><span class="line">81</span><br><span class="line">82</span><br><span class="line">83</span><br><span class="line">84</span><br><span class="line">85</span><br><span class="line">86</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">import</span> requests</span><br><span class="line"><span class="keyword">import</span> os</span><br><span class="line"><span class="keyword">import</span> binascii</span><br><span class="line"><span class="keyword">import</span> base64</span><br><span class="line"><span class="keyword">import</span> requests</span><br><span class="line"><span class="keyword">import</span> json</span><br><span class="line"><span class="keyword">from</span> Crypto.Cipher <span class="keyword">import</span> AES</span><br><span class="line"></span><br><span class="line"></span><br><span class="line">modulus = <span class="string">&#x27;00e0b509f6259df8642dbc35662901477df22677ec152b5ff68ace615bb7b725152b3ab17a876aea8a5aa76d2e417629ec4ee341f56135fccf695280104e0312ecbda92557c93870114af6c9d05c4f7f0c3685b7a46bee255932575cce10b424d813cfe4875d3e82047b97ddef52741d546b8e289dc6935b3ece0462db0a22b8e7&#x27;</span></span><br><span class="line">nonce = <span class="string">b&#x27;0CoJUm6Qyw8W8jud&#x27;</span></span><br><span class="line">pubKey = <span class="string">&#x27;010001&#x27;</span></span><br><span class="line"></span><br><span class="line"><span class="string">&quot;&quot;&quot;</span></span><br><span class="line"><span class="string">加密过程</span></span><br><span class="line"><span class="string">随机生成加密密钥secKey</span></span><br><span class="line"><span class="string">然后用secKey两次对post的查询数据进行两次AES加密</span></span><br><span class="line"><span class="string">用RSA对secKey加密</span></span><br><span class="line"><span class="string">最后把加密后的secKey和查询数据post到服务器</span></span><br><span class="line"><span class="string">&quot;&quot;&quot;</span></span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">def</span> <span class="title">createSecretKey</span>(<span class="params">size</span>):</span></span><br><span class="line">    <span class="keyword">return</span> binascii.hexlify(os.urandom(size))[:<span class="number">16</span>]</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">def</span> <span class="title">aesEncrypt</span>(<span class="params">text, secKey</span>):</span></span><br><span class="line">    pad = <span class="number">16</span> - <span class="built_in">len</span>(text) % <span class="number">16</span></span><br><span class="line">    text = text + pad * <span class="built_in">str</span>(<span class="built_in">chr</span>(pad))</span><br><span class="line">    encryptor = AES.new(secKey, AES.MODE_CBC, <span class="string">&#x27;0102030405060708&#x27;</span>.encode(<span class="string">&#x27;utf8&#x27;</span>))</span><br><span class="line">    ciphertext = encryptor.encrypt(text.encode(<span class="string">&#x27;utf8&#x27;</span>))</span><br><span class="line">    ciphertext = base64.b64encode(ciphertext).decode(<span class="string">&#x27;utf8&#x27;</span>)</span><br><span class="line">    <span class="keyword">return</span> ciphertext</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">def</span> <span class="title">rsaEncrypt</span>(<span class="params">text, pubKey, modulus</span>):</span></span><br><span class="line">    text = text[::-<span class="number">1</span>]</span><br><span class="line">    rs = <span class="built_in">int</span>(<span class="built_in">bytes</span>.<span class="built_in">hex</span>(text), <span class="number">16</span>) ** <span class="built_in">int</span>(pubKey, <span class="number">16</span>) % <span class="built_in">int</span>(modulus, <span class="number">16</span>)</span><br><span class="line">    <span class="keyword">return</span> <span class="built_in">format</span>(rs, <span class="string">&#x27;x&#x27;</span>).zfill(<span class="number">256</span>)</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">def</span> <span class="title">encrypted_request</span>(<span class="params">text</span>):</span></span><br><span class="line">    text = json.dumps(text)</span><br><span class="line">    secKey = createSecretKey(<span class="number">16</span>)</span><br><span class="line">    encText = aesEncrypt(aesEncrypt(text, nonce), secKey)</span><br><span class="line">    encSecKey = rsaEncrypt(secKey, pubKey, modulus)</span><br><span class="line">    data = &#123;</span><br><span class="line">        <span class="string">&#x27;params&#x27;</span>: encText,</span><br><span class="line">        <span class="string">&#x27;encSecKey&#x27;</span>: encSecKey</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">return</span> data</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">def</span> <span class="title">load_headers</span>(<span class="params">filename</span>):</span></span><br><span class="line">    headers = &#123;&#125;</span><br><span class="line">    <span class="keyword">with</span> <span class="built_in">open</span>(filename, <span class="string">&#x27;r&#x27;</span>) <span class="keyword">as</span> f:</span><br><span class="line">        <span class="keyword">for</span> line <span class="keyword">in</span> f.readlines():</span><br><span class="line">            entry = line.split(<span class="string">&#x27;:&#x27;</span>, <span class="number">1</span>)</span><br><span class="line">            <span class="keyword">if</span> <span class="built_in">len</span>(entry) != <span class="number">2</span>:</span><br><span class="line">                <span class="keyword">continue</span></span><br><span class="line">            headers[entry[<span class="number">0</span>].strip()] = entry[<span class="number">1</span>].strip()</span><br><span class="line">    <span class="keyword">return</span> headers</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">def</span> <span class="title">comment_post_url</span>(<span class="params">song_id, csrf=<span class="string">&#x27;&#x27;</span></span>):</span></span><br><span class="line">    <span class="keyword">return</span> <span class="string">&#x27;https://music.163.com/weapi/v1/resource/comments/R_SO_4_&#x27;</span> + \</span><br><span class="line">        song_id + <span class="string">&#x27;?csrf_token=&#x27;</span> + csrf</span><br><span class="line"></span><br><span class="line"><span class="keyword">if</span> __name__ == <span class="string">&#x27;__main__&#x27;</span>:</span><br><span class="line"></span><br><span class="line">    <span class="comment"># 加载请求头</span></span><br><span class="line">    headers = load_headers(<span class="string">&#x27;headers&#x27;</span>)</span><br><span class="line"></span><br><span class="line">    song_id = <span class="string">&#x27;28828074&#x27;</span>  </span><br><span class="line"></span><br><span class="line">    req = &#123;</span><br><span class="line">        <span class="string">&quot;csrf_token&quot;</span>:<span class="string">&quot;&quot;</span>,</span><br><span class="line">        <span class="string">&quot;limit&quot;</span>:<span class="string">&quot;20&quot;</span>,</span><br><span class="line">        <span class="string">&quot;offset&quot;</span>:<span class="string">&quot;0&quot;</span>,</span><br><span class="line">        <span class="string">&quot;rid&quot;</span>:<span class="string">&quot;R_SO_4_&quot;</span> + song_id,</span><br><span class="line">        <span class="string">&quot;total&quot;</span>:<span class="string">&quot;true&quot;</span></span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    url = comment_post_url(song_id)</span><br><span class="line"></span><br><span class="line">    postdata = encrypted_request(req)</span><br><span class="line"></span><br><span class="line">    print(<span class="string">&#x27;sending to &#123;&#125;&#x27;</span>.<span class="built_in">format</span>(url))</span><br><span class="line"></span><br><span class="line">    r = requests.post(url, data=postdata, headers=headers)</span><br><span class="line"></span><br><span class="line">    print(r.text)</span><br></pre></td></tr></table></figure>
+<p>经过测试Cookies中只有带有<code>_ntes_nuid</code>就行了。</p>
+<p>headers:</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line">Host: music.163.com</span><br><span class="line">Connection: keep-alive</span><br><span class="line">Origin: https:&#x2F;&#x2F;music.163.com</span><br><span class="line">User-Agent: Mozilla&#x2F;5.0 (X11; Linux x86_64) AppleWebKit&#x2F;537.36 (KHTML, like Gecko) Ubuntu Chromium&#x2F;71.0.3578.80 Chrome&#x2F;71.0.3578.80 Safari&#x2F;537.36</span><br><span class="line">Content-Type: application&#x2F;x-www-form-urlencoded</span><br><span class="line">Accept: *&#x2F;*</span><br><span class="line">Referer: https:&#x2F;&#x2F;music.163.com&#x2F;song?id&#x3D;558290126</span><br><span class="line">Accept-Encoding: gzip, deflate, br</span><br><span class="line">Accept-Language: zh-CN,zh;q&#x3D;0.9,en-US;q&#x3D;0.8,en;q&#x3D;0.7,en-GB;q&#x3D;0.6</span><br><span class="line">Cookie: _ntes_nuid&#x3D;9ae4bf42cfdf19018c7b461442deffe2</span><br></pre></td></tr></table></figure>
+
+
+<hr>
+<h4 id="参考资料"><a href="#参考资料" class="headerlink" title="参考资料"></a>参考资料</h4><p><a target="_blank" rel="noopener" href="https://blog.csdn.net/Ciiiiiing/article/details/62434438">网易云音乐API分析</a></p>
+<p><a target="_blank" rel="noopener" href="https://github.com/darknessomi/musicbox/wiki/%E7%BD%91%E6%98%93%E4%BA%91%E9%9F%B3%E4%B9%90%E6%96%B0%E7%89%88WebAPI%E5%88%86%E6%9E%90%E3%80%82">网易云新版webapi分析</a></p>
+
+    </div>
+
+    
+    
+    
+
+      <footer class="post-footer">
+          <div class="post-tags">
+              <a href="/oldblog/tags/python/" rel="tag"># python</a>
+          </div>
+
+        
+
+
+        
+    <div class="post-nav">
+      <div class="post-nav-item">
+    <a href="/oldblog/2018/12/23/Redis-hash%E7%B1%BB%E5%9E%8B/" rel="prev" title="Redis-hash类型">
+      <i class="fa fa-chevron-left"></i> Redis-hash类型
+    </a></div>
+      <div class="post-nav-item">
+    <a href="/oldblog/2019/01/04/Aha-awk/" rel="next" title="Aha awk!">
+      Aha awk! <i class="fa fa-chevron-right"></i>
+    </a></div>
+    </div>
+      </footer>
+    
+  </article>
+  
+  
+  
+
+
+
+          </div>
+          
+
+<script>
+  window.addEventListener('tabs:register', () => {
+    let { activeClass } = CONFIG.comments;
+    if (CONFIG.comments.storage) {
+      activeClass = localStorage.getItem('comments_active') || activeClass;
+    }
+    if (activeClass) {
+      let activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
+      if (activeTab) {
+        activeTab.click();
+      }
+    }
+  });
+  if (CONFIG.comments.storage) {
+    window.addEventListener('tabs:click', event => {
+      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
+      let commentClass = event.target.classList[1];
+      localStorage.setItem('comments_active', commentClass);
+    });
+  }
+</script>
+
+        </div>
+          
+  
+  <div class="toggle sidebar-toggle">
+    <span class="toggle-line toggle-line-first"></span>
+    <span class="toggle-line toggle-line-middle"></span>
+    <span class="toggle-line toggle-line-last"></span>
+  </div>
+
+  <aside class="sidebar">
+    <div class="sidebar-inner">
+
+      <ul class="sidebar-nav motion-element">
+        <li class="sidebar-nav-toc">
+          文章目录
+        </li>
+        <li class="sidebar-nav-overview">
+          站点概览
+        </li>
+      </ul>
+
+      <!--noindex-->
+      <div class="post-toc-wrap sidebar-panel">
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%AE%9A%E4%BD%8D%E8%AF%84%E8%AE%BA%E8%AF%B7%E6%B1%82"><span class="nav-number">1.</span> <span class="nav-text">定位评论请求</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%88%86%E6%9E%90%E8%AF%B7%E6%B1%82"><span class="nav-number">2.</span> <span class="nav-text">分析请求</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#%E5%9C%A8%E5%93%AA%E5%8A%A0%E5%AF%86"><span class="nav-number">2.1.</span> <span class="nav-text">在哪加密</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#%E5%8A%A0%E5%AF%86%E5%8F%82%E6%95%B0"><span class="nav-number">2.2.</span> <span class="nav-text">加密参数</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#%E5%8A%A0%E5%AF%86%E7%AD%96%E7%95%A5"><span class="nav-number">2.3.</span> <span class="nav-text">加密策略</span></a></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E4%BB%A3%E7%A0%81"><span class="nav-number">3.</span> <span class="nav-text">代码</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#%E5%8F%82%E8%80%83%E8%B5%84%E6%96%99"><span class="nav-number">3.1.</span> <span class="nav-text">参考资料</span></a></li></ol></li></ol></div>
+      </div>
+      <!--/noindex-->
+
+      <div class="site-overview-wrap sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+  <p class="site-author-name" itemprop="name">Charles</p>
+  <div class="site-description" itemprop="description">Be happy, please.</div>
+</div>
+<div class="site-state-wrap motion-element">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+          <a href="/oldblog/archives/">
+        
+          <span class="site-state-item-count">22</span>
+          <span class="site-state-item-name">日志</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-tags">
+            <a href="/oldblog/tags/">
+        <span class="site-state-item-count">14</span>
+        <span class="site-state-item-name">标签</span></a>
+      </div>
+  </nav>
+</div>
+
+
+
+      </div>
+
+    </div>
+  </aside>
+  <div id="sidebar-dimmer"></div>
+
+
+      </div>
+    </main>
+
+    <footer class="footer">
+      <div class="footer-inner">
+        
+
+        
+
+<div class="copyright">
+  
+  &copy; 
+  <span itemprop="copyrightYear">2021</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">Charles</span>
+</div>
+  <div class="powered-by">由 <a href="https://hexo.io/" class="theme-link" rel="noopener" target="_blank">Hexo</a> & <a href="https://pisces.theme-next.org/" class="theme-link" rel="noopener" target="_blank">NexT.Pisces</a> 强力驱动
+  </div>
+
+        
+
+
+
+
+
+
+
+
+      </div>
+    </footer>
+  </div>
+
+  
+  <script src="/oldblog/lib/anime.min.js"></script>
+  <script src="/oldblog/lib/velocity/velocity.min.js"></script>
+  <script src="/oldblog/lib/velocity/velocity.ui.min.js"></script>
+
+<script src="/oldblog/js/utils.js"></script>
+
+<script src="/oldblog/js/motion.js"></script>
+
+
+<script src="/oldblog/js/schemes/pisces.js"></script>
+
+
+<script src="/oldblog/js/next-boot.js"></script>
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  
+
+</body>
+</html>
